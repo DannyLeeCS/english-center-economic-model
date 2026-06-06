@@ -1,0 +1,242 @@
+<div style="padding: 1rem 0;">
+<h2 class="sr-only">Interactive model separating the class size you can afford (set by tuition and cost) from the class size you actually fill (set by enrollment, levels, and wait time).</h2>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:1rem;">
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; border-left:3px solid #185FA5; border-radius:0 var(--border-radius-lg) var(--border-radius-lg) 0;">
+    <div style="font-size:12px; color:var(--color-text-secondary); text-transform:none;">Set by tuition + cost</div>
+    <div style="font-size:13px; color:#185FA5; font-weight:500; margin-top:2px;">Break-even size — what you need</div>
+    <div style="font-size:28px; font-weight:500; margin-top:6px;" id="o-be">—</div>
+  </div>
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; border-left:3px solid #0F6E56; border-radius:0 var(--border-radius-lg) var(--border-radius-lg) 0;">
+    <div style="font-size:12px; color:var(--color-text-secondary);">Set by enrollment + levels + wait</div>
+    <div style="font-size:13px; color:#0F6E56; font-weight:500; margin-top:2px;">Actual size — what you fill</div>
+    <div style="font-size:28px; font-weight:500; margin-top:6px;" id="o-cs">—</div>
+  </div>
+</div>
+
+<div id="gap" style="font-size:13px; padding:9px 14px; border-radius:var(--border-radius-md); margin-bottom:1.25rem; text-align:center;"></div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:1.5rem;">
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">Monthly leads</div>
+    <div style="font-size:22px; font-weight:500;" id="o-leads">—</div>
+  </div>
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">Enrolled / month</div>
+    <div style="font-size:22px; font-weight:500;" id="o-enroll">—</div>
+  </div>
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">Active students</div>
+    <div style="font-size:22px; font-weight:500;" id="o-active">—</div>
+  </div>
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">Monthly profit</div>
+    <div style="font-size:22px; font-weight:500;" id="o-profit">—</div>
+  </div>
+</div>
+
+<div style="font-size:12px; color:#185FA5; font-weight:500; margin-bottom:8px; text-transform:none;">Levers that set break-even (what you can afford)</div>
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px 32px; margin-bottom:1.5rem; padding:14px 16px; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg);">
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Tuition / course</label>
+      <span style="font-size:14px; font-weight:500;" id="v-fee">13M</span>
+    </div>
+    <input type="range" min="2" max="60" step="0.5" value="13" id="s-fee" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Variable cost / student</label>
+      <span style="font-size:14px; font-weight:500;" id="v-vc">3M</span>
+    </div>
+    <input type="range" min="0.5" max="15" step="0.25" value="3" id="s-vc" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Cost to run one class / mo</label>
+      <span style="font-size:14px; font-weight:500;" id="v-cf">18M</span>
+    </div>
+    <input type="range" min="5" max="50" step="1" value="18" id="s-cf" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Course length (months)</label>
+      <span style="font-size:14px; font-weight:500;" id="v-cm">3</span>
+    </div>
+    <input type="range" min="1" max="8" step="1" value="3" id="s-cm" style="width:100%;" />
+  </div>
+
+</div>
+
+<div style="font-size:12px; color:#0F6E56; font-weight:500; margin-bottom:8px; text-transform:none;">Levers that set actual fill (how many bodies you seat)</div>
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px 32px; margin-bottom:1.5rem; padding:14px 16px; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg);">
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Marketing spend / month</label>
+      <span style="font-size:14px; font-weight:500;" id="v-mkt">400M</span>
+    </div>
+    <input type="range" min="0" max="2000" step="10" value="400" id="s-mkt" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Cost per lead (CPL)</label>
+      <span style="font-size:14px; font-weight:500;" id="v-cpl">720k</span>
+    </div>
+    <input type="range" min="20" max="2000" step="10" value="720" id="s-cpl" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Lead → enroll rate</label>
+      <span style="font-size:14px; font-weight:500;" id="v-conv">6%</span>
+    </div>
+    <input type="range" min="1" max="60" step="1" value="6" id="s-conv" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Number of levels</label>
+      <span style="font-size:14px; font-weight:500;" id="v-lvl">6</span>
+    </div>
+    <input type="range" min="2" max="30" step="1" value="6" id="s-lvl" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Max wait time</label>
+      <span style="font-size:14px; font-weight:500;" id="v-wait">4 wks</span>
+    </div>
+    <input type="range" min="1" max="36" step="1" value="4" id="s-wait" style="width:100%;" />
+  </div>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+      <label style="font-size:14px; color:var(--color-text-secondary);">Fixed cost / month</label>
+      <span style="font-size:14px; font-weight:500;" id="v-fix">500M</span>
+    </div>
+    <input type="range" min="20" max="2000" step="10" value="500" id="s-fix" style="width:100%;" />
+  </div>
+
+</div>
+
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:1.25rem; padding:10px 14px; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md);">
+  <input type="checkbox" id="elastic" checked style="width:auto;" />
+  <label for="elastic" style="font-size:13px; color:var(--color-text-secondary);">Tuition affects conversion (price elasticity) — the only indirect path from price to fill</label>
+</div>
+
+<div style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; margin-bottom:1rem;">
+  <table style="width:100%; font-size:13px; border-collapse:collapse;">
+    <tr><td style="padding:5px 0; color:var(--color-text-secondary);">Contribution / student</td><td style="text-align:right; font-weight:500;" id="t-contrib">—</td></tr>
+    <tr><td style="padding:5px 0; color:var(--color-text-secondary);">Margin per class</td><td style="text-align:right; font-weight:500;" id="t-mc">—</td></tr>
+    <tr><td style="padding:5px 0; color:var(--color-text-secondary);">Effective conversion (after price effect)</td><td style="text-align:right; font-weight:500;" id="t-ec">—</td></tr>
+    <tr><td style="padding:5px 0; color:var(--color-text-secondary);">CAC / enrolled student</td><td style="text-align:right; font-weight:500;" id="t-cac">—</td></tr>
+    <tr><td style="padding:5px 0; color:var(--color-text-secondary);">LTV / CAC</td><td style="text-align:right; font-weight:500;" id="t-ratio">—</td></tr>
+  </table>
+</div>
+
+<script>
+(function(){
+  const ids = ['fee','vc','cf','cm','mkt','cpl','conv','lvl','wait','fix'];
+  const el = {};
+  ids.forEach(i => { el['s-'+i] = document.getElementById('s-'+i); el['v-'+i] = document.getElementById('v-'+i); });
+  const out = id => document.getElementById(id);
+  const elasticBox = document.getElementById('elastic');
+
+  const fmtM = n => { if (Math.abs(n) >= 1000) return (n/1000).toFixed(2)+'B'; return Math.round(n)+'M'; };
+  const fmtK = n => Math.round(n)+'k';
+
+  function compute(){
+    const fee  = +el['s-fee'].value;
+    const vc   = +el['s-vc'].value;
+    const cf   = +el['s-cf'].value;
+    const cm   = +el['s-cm'].value;
+    const mkt  = +el['s-mkt'].value;
+    const cpl  = +el['s-cpl'].value;
+    const conv = +el['s-conv'].value;
+    const lvl  = +el['s-lvl'].value;
+    const wait = +el['s-wait'].value;
+    const fix  = +el['s-fix'].value;
+
+    el['v-fee'].textContent  = fmtM(fee);
+    el['v-vc'].textContent   = fmtM(vc);
+    el['v-cf'].textContent   = fmtM(cf);
+    el['v-cm'].textContent   = cm;
+    el['v-mkt'].textContent  = fmtM(mkt);
+    el['v-cpl'].textContent  = fmtK(cpl);
+    el['v-conv'].textContent = conv+'%';
+    el['v-lvl'].textContent  = lvl;
+    el['v-wait'].textContent = wait+(wait===1?' wk':' wks');
+    el['v-fix'].textContent  = fmtM(fix);
+
+    const feePerMonth = fee / cm;
+    const vcPerMonth = vc / cm;
+    const contribPerStudent = feePerMonth - vcPerMonth;
+    const breakEven = contribPerStudent > 0 ? (cf / contribPerStudent) : 999;
+
+    const leads = (mkt * 1000) / cpl;
+    const useElastic = elasticBox.checked;
+    const feeElastic = useElastic ? Math.pow(13 / fee, 0.45) : 1;
+    const effConv = Math.min(0.6, (conv/100) * feeElastic);
+    const enrolled = leads * effConv;
+
+    const perLevel = enrolled / lvl;
+    const pooled = perLevel * (wait / 4);
+    let abandon = 0;
+    if (wait > 8) abandon = Math.min(0.6, (wait - 8) * 0.05);
+    const seated = pooled * (1 - abandon);
+    const cap = 18;
+    const classSize = Math.min(cap, seated);
+
+    const activeStudents = classSize * lvl;
+    const revenue = activeStudents * feePerMonth;
+    const varCost = activeStudents * vcPerMonth;
+    const profit = revenue - varCost - fix;
+    const marginPerClass = classSize * contribPerStudent - cf;
+
+    const cac = enrolled > 0 ? (mkt / enrolled) : 0;
+    const ltv = fee - vc;
+    const ratio = cac > 0 ? (ltv / cac) : 0;
+
+    out('o-be').textContent = breakEven > 99 ? 'n/a' : breakEven.toFixed(1);
+    out('o-cs').textContent = classSize.toFixed(1);
+    out('o-leads').textContent = Math.round(leads);
+    out('o-enroll').textContent = Math.round(enrolled);
+    out('o-active').textContent = Math.round(activeStudents);
+    const pEl = out('o-profit');
+    pEl.textContent = fmtM(profit);
+    pEl.style.color = profit >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)';
+
+    const g = out('gap');
+    const surplus = classSize - breakEven;
+    if (breakEven > 99){
+      g.textContent = 'Variable cost exceeds tuition per month — no class size is profitable.';
+      g.style.background = 'var(--color-background-danger)'; g.style.color = 'var(--color-text-danger)';
+    } else if (surplus >= 0){
+      g.textContent = 'You fill '+classSize.toFixed(1)+' vs '+breakEven.toFixed(1)+' needed — '+surplus.toFixed(1)+' students of cushion above break-even.';
+      g.style.background = 'var(--color-background-success)'; g.style.color = 'var(--color-text-success)';
+    } else {
+      g.textContent = 'You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+' students. Every class loses money.';
+      g.style.background = 'var(--color-background-danger)'; g.style.color = 'var(--color-text-danger)';
+    }
+
+    out('t-contrib').textContent = fmtM(contribPerStudent)+' / mo';
+    const mc = out('t-mc'); mc.textContent = fmtM(marginPerClass)+' / class';
+    mc.style.color = marginPerClass >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)';
+    out('t-ec').textContent = (effConv*100).toFixed(1)+'%';
+    out('t-cac').textContent = fmtM(cac);
+    const r = out('t-ratio'); r.textContent = ratio.toFixed(1)+'×';
+    r.style.color = ratio >= 3 ? 'var(--color-text-success)' : (ratio >= 1.5 ? 'var(--color-text-warning)' : 'var(--color-text-danger)');
+  }
+
+  ids.forEach(i => el['s-'+i].addEventListener('input', compute));
+  elasticBox.addEventListener('change', compute);
+  compute();
+})();
+</script>
+</div>
