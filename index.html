@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>English Center — Class Size Economic Model</title>
-<meta name="description" content="A stock-and-flow planning model for an English center: break-even vs fill, multi-course lifetime value, upsell, capacity, and a live active-students projection." />
+<meta name="description" content="A stock-and-flow planning model for an English center: break-even vs fill, multi-course lifetime value, upsell, capacity, live class count, and teacher split." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -15,7 +15,7 @@
 
 <header class="page-header">
   <h1>Class size you can <span class="grad-be">afford</span> vs. class size you <span class="grad-fill">fill</span></h1>
-  <p>A stock-and-flow planning model for an English center. Active students are a <strong>stock</strong> that flows in (acquisition) and out (graduation); every revenue, cost, and profit total derives from that stock — not a single intake. Tuition reaches fill only indirectly, through price elasticity on conversion.</p>
+  <p>A stock-and-flow planning model for an English center. Active students are a <strong>stock</strong> that flows in (acquisition) and out (graduation); the number of classes is derived from that stock and drives part-time teacher cost and room use. Every total derives from the stock — not a single intake.</p>
 </header>
 
 <div class="layout">
@@ -45,13 +45,13 @@
         <div class="lever">
           <div class="lever-top"><label for="s-ro">Room out-of-pocket / class / mo</label><span class="lever-val" id="v-ro">3M</span></div>
           <input type="range" min="0" max="20" step="0.5" value="3" id="s-ro" />
-          <div class="hint">Electricity, AC, cleaning for the slot. Room <em>opportunity</em> cost is separate (Teachers &amp; rooms). Teacher pay is no longer here — see Teachers below.</div>
+          <div class="hint">Electricity, AC, cleaning per running class. Teacher pay is <strong>not</strong> here — it's in Teachers.</div>
         </div>
 
         <div class="lever">
           <div class="lever-top"><label for="s-cm">Course length (months)</label><span class="lever-val" id="v-cm">3</span></div>
           <input type="range" min="1" max="12" step="0.5" value="3" id="s-cm" />
-          <div class="hint">Months a single course runs. Combined with courses-per-student it sets how long a student stays active.</div>
+          <div class="hint">Months a single course runs. With courses-per-student, sets how long a student stays active.</div>
         </div>
 
       </div>
@@ -84,23 +84,55 @@
       </div>
     </div>
 
-    <!-- ---- Teachers & rooms ---- -->
+    <!-- ---- Teachers ---- -->
     <div class="lever-group">
-      <div class="lever-heading lever-heading--cap">Teachers &amp; rooms <span class="drives drives--cap">cost placement &amp; the ceiling</span></div>
-      <p class="group-note">All teacher money lives here — none is hidden in the buckets above. Salaried teachers are fixed; part-timers scale with classes running.</p>
+      <div class="lever-heading lever-heading--be">Teachers <span class="drives">split keys off class count</span></div>
+      <p class="group-note">All teacher money lives here. Full-timers are a fixed salary; part-timers are paid by the hour on the share of classes they cover — which scales with the live class count.</p>
+      <div class="levers be">
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-ftsal">Full-time teacher salary / mo (total)</label><span class="lever-val" id="v-ftsal">40M</span></div>
+          <input type="range" min="0" max="1000" step="10" value="40" id="s-ftsal" />
+          <div class="hint"><strong>Fixed</strong> — independent of class count. Doesn't move break-even.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-ptpct">% of classes taught part-time</label><span class="lever-val" id="v-ptpct">50%</span></div>
+          <input type="range" min="0" max="100" step="5" value="50" id="s-ptpct" />
+          <div class="hint">Single source of truth for the FT/PT split. Part-time classes = total classes × this %. (Full-timers cover the rest.)</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-pthr">Part-time hourly rate</label><span class="lever-val" id="v-pthr">300k</span></div>
+          <input type="range" min="50" max="1500" step="10" value="300" id="s-pthr" />
+          <div class="hint">What you pay a part-timer per teaching hour.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-pthrs">Teaching hours / class / week</label><span class="lever-val" id="v-pthrs">6</span></div>
+          <input type="range" min="1" max="20" step="0.5" value="6" id="s-pthrs" />
+          <div class="hint">Sessions per week × session length. ×4.3 → hours/month. PT cost = PT classes × hours/mo × rate.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-ftper">Salary per FT teacher / mo</label><span class="lever-val" id="v-ftper">20M</span></div>
+          <input type="range" min="5" max="80" step="1" value="20" id="s-ftper" />
+          <div class="hint">Sanity check only — implied FT teachers = total salary ÷ this.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-ftcov">Classes one FT teacher covers</label><span class="lever-val" id="v-ftcov">3</span></div>
+          <input type="range" min="1" max="15" step="1" value="3" id="s-ftcov" />
+          <div class="hint">Sanity check only — validates whether the FT salary can actually staff the full-time classes.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ---- Rooms & capacity ---- -->
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--cap">Rooms &amp; capacity <span class="drives drives--cap">the ceiling</span></div>
       <div class="levers cap">
-
-        <div class="lever">
-          <div class="lever-top"><label for="s-ftsal">Full-time teacher salary / mo (total)</label><span class="lever-val" id="v-ftsal">200M</span></div>
-          <input type="range" min="0" max="1000" step="10" value="200" id="s-ftsal" />
-          <div class="hint"><strong>Fixed</strong> center cost — independent of class count. Doesn't move break-even.</div>
-        </div>
-
-        <div class="lever">
-          <div class="lever-top"><label for="s-ptsal">Part-time teacher / class / mo</label><span class="lever-val" id="v-ptsal">10M</span></div>
-          <input type="range" min="0" max="40" step="0.5" value="10" id="s-ptsal" />
-          <div class="hint"><strong>Marginal</strong> per running class. This + room out-of-pocket = "cost to run one class", and it sets the minimum class size.</div>
-        </div>
 
         <div class="lever">
           <div class="lever-top"><label for="s-cap">Physical class cap (students)</label><span class="lever-val" id="v-cap">18</span></div>
@@ -201,7 +233,7 @@
         <div class="lever">
           <div class="lever-top"><label for="s-fix">Non-teacher overhead / month</label><span class="lever-val" id="v-fix">300M</span></div>
           <input type="range" min="0" max="3000" step="10" value="300" id="s-fix" />
-          <div class="hint">Office staff, management, non-classroom lease, marketing overhead. <strong>No teacher salary here</strong> — that's in Teachers &amp; rooms.</div>
+          <div class="hint">Office staff, management, non-classroom lease, marketing overhead. <strong>No teacher salary here.</strong></div>
         </div>
       </div>
     </div>
@@ -237,12 +269,15 @@
 
     <div id="gap" class="gap"></div>
     <div id="cap-badge" class="badge"></div>
+    <div id="ft-badge" class="badge"></div>
 
-    <div class="kpis">
+    <div class="kpis kpis--6">
       <div class="kpi"><div class="kpi-label">Monthly leads</div><div class="kpi-num" id="o-leads">—</div></div>
       <div class="kpi"><div class="kpi-label">Seated enrollments / mo</div><div class="kpi-num" id="o-enroll">—</div></div>
-      <div class="kpi"><div class="kpi-label" title="Steady-state stock the inflow can sustain">Active students <span class="muted">(steady state)</span></div><div class="kpi-num" id="o-active">—</div></div>
-      <div class="kpi"><div class="kpi-label">Monthly profit <span class="muted">(at steady state)</span></div><div class="kpi-num" id="o-profit">—</div></div>
+      <div class="kpi"><div class="kpi-label" title="Steady-state stock the inflow can sustain">Active students <span class="muted">(steady)</span></div><div class="kpi-num" id="o-active">—</div></div>
+      <div class="kpi kpi--accent"><div class="kpi-label">Classes running</div><div class="kpi-num" id="o-classes">—</div></div>
+      <div class="kpi"><div class="kpi-label">Part-time classes</div><div class="kpi-num" id="o-ptclasses">—</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly profit <span class="muted">(steady)</span></div><div class="kpi-num" id="o-profit">—</div></div>
     </div>
 
     <div class="detail">
@@ -253,6 +288,17 @@
         <tr><td>− Per-class (PT teacher + room OOP)</td><td class="num neg" id="p-class">—</td></tr>
         <tr><td>− Center fixed (overhead + FT salary)</td><td class="num neg" id="p-fix">—</td></tr>
         <tr class="total"><td>= Monthly profit</td><td class="num" id="p-profit">—</td></tr>
+      </table>
+    </div>
+
+    <div class="detail">
+      <div class="detail-title">Teacher split <span class="muted">— scales with class count</span></div>
+      <table>
+        <tr><td>Part-time / full-time classes</td><td class="num" id="ts-split">—</td></tr>
+        <tr><td>Teaching hours / class / mo</td><td class="num" id="ts-hours">—</td></tr>
+        <tr><td>PT cost / class / mo</td><td class="num" id="ts-ptcostclass">—</td></tr>
+        <tr><td>Part-time teacher cost / mo</td><td class="num" id="ts-ptcost">—</td></tr>
+        <tr><td>Full-time salary / mo (fixed)</td><td class="num" id="ts-ftsal">—</td></tr>
       </table>
     </div>
 
@@ -281,7 +327,6 @@
       <div class="detail-title">Stock &amp; capacity</div>
       <table>
         <tr><td>Upsell revenue / mo <span class="muted">(zero CAC)</span></td><td class="num" id="t-uprev">—</td></tr>
-        <tr><td>Classes running now</td><td class="num" id="t-classes">—</td></tr>
         <tr><td>Room utilization</td><td class="num" id="t-util">—</td></tr>
       </table>
     </div>
@@ -311,8 +356,9 @@
 (function(){
   const CY='#38bdf8', EM='#34d399', VI='#a78bfa', AM='#fbbf24', TRACK='rgba(255,255,255,.10)';
   const ACCENT = {
-    fee:CY, vc:CY, ro:CY, cm:CY, fix:CY, ftsal:CY, ptsal:CY,
+    fee:CY, vc:CY, ro:CY, cm:CY, fix:CY,
     courses:AM, uppct:AM, upcourses:AM,
+    ftsal:CY, ptpct:CY, pthr:CY, pthrs:CY, ftper:CY, ftcov:CY,
     cap:VI, rooms:VI, opp:VI,
     mkt:EM, cpl:EM, conv:EM, lvl:EM, wait:EM, initact:EM
   };
@@ -335,7 +381,6 @@
   }
   function setText(id, v, color){ const e=$(id); e.textContent=v; if(color!==undefined) e.style.color=color; }
 
-  // ---------- active-students line chart (no deps) ----------
   function buildChart(series, steady, yMax){
     const W=640, Hs=250, padL=46, padR=16, padT=14, padB=26;
     const xMax = series.length-1;
@@ -365,7 +410,8 @@
 
     const fee=num('fee'), vc=num('vc'), ro=num('ro'), cm=num('cm');
     const courses=num('courses'), upPct=num('uppct')/100, upCourses=num('upcourses');
-    const ftsal=num('ftsal'), ptsal=num('ptsal');
+    const ftsal=num('ftsal'), ptpct=num('ptpct')/100, pthr=num('pthr'), pthrs=num('pthrs');
+    const ftper=num('ftper'), ftcov=num('ftcov');
     const cap=num('cap'), rooms=num('rooms'), opp=num('opp');
     const mkt=num('mkt'), cpl=num('cpl'), conv=num('conv'), lvl=num('lvl'), wait=num('wait');
     const initAct=num('initact'), fix=num('fix');
@@ -374,7 +420,8 @@
     // value labels
     setText('v-fee',fmtM(fee)); setText('v-vc',fmtM(vc)); setText('v-ro',fmtM(ro)); setText('v-cm',cm);
     setText('v-courses',courses); setText('v-uppct',Math.round(upPct*100)+'%'); setText('v-upcourses',upCourses);
-    setText('v-ftsal',fmtM(ftsal)); setText('v-ptsal',fmtM(ptsal));
+    setText('v-ftsal',fmtM(ftsal)); setText('v-ptpct',Math.round(ptpct*100)+'%'); setText('v-pthr',fmtK(pthr));
+    setText('v-pthrs',pthrs); setText('v-ftper',fmtM(ftper)); setText('v-ftcov',ftcov);
     setText('v-cap',cap); setText('v-rooms',rooms); setText('v-opp',fmtM(opp));
     setText('v-mkt',fmtM(mkt)); setText('v-cpl',fmtK(cpl)); setText('v-conv',conv+'%');
     setText('v-lvl',lvl); setText('v-wait',wait+(wait===1?' wk':' wks')); setText('v-initact',Math.round(initAct));
@@ -385,10 +432,9 @@
     const vcPerMonth = vc/cm;
     const contribPerStudent = feePerMonth - vcPerMonth;
 
-    // courses & duration (A + C): one head, longer stay
-    const avgCourses = courses + upPct*upCourses;            // expected courses over a lifetime
-    const avgLifetime = Math.max(0.5, cm*avgCourses);        // months a student stays active
-    const g = 1/avgLifetime;                                  // monthly graduation/decay rate
+    const avgCourses = courses + upPct*upCourses;
+    const avgLifetime = Math.max(0.5, cm*avgCourses);
+    const g = 1/avgLifetime;
 
     // -------- demand funnel (heads/month) --------
     const leads = (mkt*1000)/cpl;
@@ -399,11 +445,11 @@
       const avgWaitWeeks = (intakeMonths*4)/2;
       abandon = clamp((avgWaitWeeks - wait)/Math.max(wait,1)*0.5, 0, 0.6);
     }
-    const inflowDemand = leads*effConv*(1-abandon);          // new heads/mo wanting a seat
+    const inflowDemand = leads*effConv*(1-abandon);
 
     // -------- capacity ceiling --------
     const maxStock = rooms*cap;
-    const desiredStock = inflowDemand*avgLifetime;            // Little's law: stock = inflow × dwell
+    const desiredStock = inflowDemand*avgLifetime;
     const steadyStock = Math.min(desiredStock, maxStock);
     const desiredStudentsPerLevel = desiredStock/lvl;
     const desiredSections = Math.max(1, Math.ceil(desiredStudentsPerLevel/cap));
@@ -411,32 +457,42 @@
     const capacityConstrained = desiredClasses > rooms + 1e-9;
     const roomsScarce = forceScarce || capacityConstrained;
 
+    // === SECTION A: total classes — single consistent value, capped by rooms ===
     const classesRunning = Math.min(desiredClasses, rooms);
     const classSize = classesRunning>0 ? steadyStock/classesRunning : 0;
-    const seatedInflow = steadyStock/avgLifetime;            // heads/mo actually seated (=outflow)
+    const seatedInflow = steadyStock/avgLifetime;
     const utilization = rooms>0 ? desiredClasses/rooms : 0;
 
-    // -------- per-class marginal cost & break-even (D + #6) --------
-    const marginalClassCost = ptsal + ro + (roomsScarce ? opp : 0);   // FT salary is fixed, excluded
+    // === SECTION B: PT/FT split keys off class count ===
+    const ptClasses = classesRunning*ptpct;
+    const ftClasses = classesRunning*(1-ptpct);
+
+    // === SECTION C: part-time cost from hourly rate × hours ===
+    const hoursPerClassMonth = pthrs*4.3;
+    const ptCostPerClass = hoursPerClassMonth*pthr/1000;       // pthr in k VND → M
+    const ptCostTotal = ptClasses*ptCostPerClass;
+
+    // -------- per-class marginal cost & break-even --------
+    // marginal class is staffed by a part-timer (FT is fixed/sunk)
+    const marginalClassCost = ptCostPerClass + ro + (roomsScarce ? opp : 0);
     const breakEven = contribPerStudent>0 ? marginalClassCost/contribPerStudent : 999;
 
     // -------- totals from the stock --------
     const revenue = steadyStock*feePerMonth;
     const varCostTotal = steadyStock*vcPerMonth;
-    const classCashTotal = (ptsal+ro)*classesRunning;
-    const fixedTotal = fix + ftsal;
-    const profit = revenue - varCostTotal - classCashTotal - fixedTotal;
+    const roomCostTotal = ro*classesRunning;
+    const perClassBucket = ptCostTotal + roomCostTotal;         // PT teacher + room (no FT here)
+    const fixedTotal = fix + ftsal;                             // overhead + FT salary
+    const profit = revenue - varCostTotal - perClassBucket - fixedTotal;
 
-    // upsell contribution (extra stock from extended duration, zero CAC)
     const upsellStock = Math.min(steadyStock, seatedInflow*upPct*upCourses*cm);
     const upsellRev = upsellStock*feePerMonth;
 
-    // -------- lifetime value (A + C against one CAC) --------
+    // -------- lifetime value --------
     const cac = seatedInflow>0 ? mkt/seatedInflow : 0;
     const ltv = avgCourses*(fee - vc);
     const ratio = cac>0 ? ltv/cac : 0;
 
-    // -------- per-class ratio --------
     const marginPerClass = classSize*contribPerStudent - marginalClassCost;
 
     // -------- deferred revenue --------
@@ -444,12 +500,15 @@
     const recognized = revenue;
     const unearned = steadyStock*feePerMonth*Math.max(0,(cm-1))/2;
 
-    // -------- stock projection (decay model) --------
+    // === SECTION D: FT capacity sanity check (validate, never override) ===
+    const impliedFT = ftper>0 ? ftsal/ftper : 0;
+    const ftCapClasses = impliedFT*ftcov;
+    const ftTol = Math.max(0.5, ftClasses*0.15);
+
+    // -------- stock projection --------
     const H = 24;
     const series = [initAct];
-    for (let t=1; t<=H; t++){
-      series.push(Math.min(maxStock, series[t-1]*(1-g) + inflowDemand));
-    }
+    for (let t=1; t<=H; t++) series.push(Math.min(maxStock, series[t-1]*(1-g) + inflowDemand));
     const yMax = Math.max(...series, steadyStock, 10)*1.12;
     $('chart').innerHTML = buildChart(series, steadyStock, yMax);
     const dir = steadyStock - initAct;
@@ -463,6 +522,8 @@
     setText('o-leads', Math.round(leads));
     setText('o-enroll', Math.round(seatedInflow));
     setText('o-active', Math.round(steadyStock));
+    setText('o-classes', classesRunning.toFixed(1));
+    setText('o-ptclasses', ptClasses.toFixed(1));
     setText('o-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
 
     const gEl=$('gap'); gEl.classList.remove('gap--good','gap--bad');
@@ -476,12 +537,31 @@
     else if (classSize < cap-0.05){ b.textContent='Demand-constrained — empty seats, rooms to spare ('+Math.round(utilization*100)+'% used). Marketing & conversion add students.'; b.classList.add('badge--demand'); }
     else { b.textContent='Tight — classes near the cap and rooms nearly full ('+Math.round(utilization*100)+'% used).'; b.classList.add('badge--ok'); }
 
+    // FT sanity-check badge
+    const fb=$('ft-badge'); fb.classList.remove('badge--cap','badge--warn','badge--ok');
+    if (ftCapClasses - ftClasses > ftTol){
+      fb.textContent='FT salary staffs ~'+ftCapClasses.toFixed(0)+' classes but only '+ftClasses.toFixed(1)+' are full-time — paying for idle capacity. Raise PT% or cut salary.';
+      fb.classList.add('badge--warn');
+    } else if (ftClasses - ftCapClasses > ftTol){
+      fb.textContent='FT salary covers only ~'+ftCapClasses.toFixed(0)+' classes but '+ftClasses.toFixed(1)+' are full-time — can’t staff them. Raise FT salary or lift PT%.';
+      fb.classList.add('badge--cap');
+    } else {
+      fb.textContent='FT budget (~'+ftCapClasses.toFixed(0)+' classes) matches the '+ftClasses.toFixed(1)+' full-time classes.';
+      fb.classList.add('badge--ok');
+    }
+
     setText('p-rev', fmtM(revenue));
     setText('p-rev-note', upsellRev>0 ? '(incl. '+fmtM(upsellRev)+' upsell)' : '');
     setText('p-var', '−'+fmtM(varCostTotal));
-    setText('p-class', '−'+fmtM(classCashTotal));
+    setText('p-class', '−'+fmtM(perClassBucket));
     setText('p-fix', '−'+fmtM(fixedTotal));
     setText('p-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
+
+    setText('ts-split', ptClasses.toFixed(1)+' / '+ftClasses.toFixed(1)+' of '+classesRunning.toFixed(1));
+    setText('ts-hours', Math.round(hoursPerClassMonth)+' h');
+    setText('ts-ptcostclass', fmtM1(ptCostPerClass));
+    setText('ts-ptcost', fmtM(ptCostTotal));
+    setText('ts-ftsal', fmtM(ftsal));
 
     setText('t-courses', avgCourses.toFixed(2));
     setText('t-dur', avgLifetime.toFixed(1)+' mo');
@@ -495,7 +575,6 @@
     setText('t-ec', (effConv*100).toFixed(1)+'%');
 
     setText('t-uprev', fmtM(upsellRev));
-    setText('t-classes', classesRunning.toFixed(1)+' / '+rooms+' slots');
     setText('t-util', Math.round(utilization*100)+'%', capacityConstrained ? 'var(--color-text-danger)' : 'var(--text)');
 
     setText('d-cash', fmtM(cashIn));
@@ -506,7 +585,7 @@
   }
 
   // ---------- persistence ----------
-  const STORAGE_KEY = 'ecm.state.v2';
+  const STORAGE_KEY = 'ecm.state.v3';
   function saveState(){
     try{
       const s = { mode, intakeMonths, elastic:$('elastic').checked, scarce:$('scarce').checked, deferred:$('deferred').checked };
