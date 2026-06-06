@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>English Center — Class Size Economic Model</title>
-<meta name="description" content="Interactive model separating the class size you can afford (break-even) from the class size you actually fill." />
+<meta name="description" content="Interactive model separating the class size you can afford (break-even) from the class size you actually fill, with correct cohort overlap, cost buckets, and capacity constraints." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -15,45 +15,95 @@
 
 <header class="page-header">
   <h1>Class size you can <span class="grad-be">afford</span> vs. class size you <span class="grad-fill">fill</span></h1>
-  <p>An interactive model that separates the class size your unit economics <em>require</em> (break-even, set by tuition and cost) from the class size you actually <em>fill</em> (set by enrollment, levels, and wait time).</p>
+  <p>A planning model for an English center. <strong>Break-even size</strong> is set only by cost levers; <strong>actual fill</strong> is set only by demand levers. Tuition reaches fill only indirectly, through price elasticity on conversion. Totals correctly account for overlapping cohorts.</p>
 </header>
 
 <div class="layout">
 
   <!-- ============ CONTROLS ============ -->
   <section class="card controls">
-    <h2 class="sr-only">Levers</h2>
+    <h2 class="sr-only">Inputs</h2>
 
+    <!-- ---- Unit economics / cost buckets ---- -->
     <div class="lever-group">
-      <div class="lever-heading lever-heading--be">Levers that set break-even — what you can afford</div>
-      <div class="levers">
+      <div class="lever-heading lever-heading--be">Unit economics — where each cost attaches <span class="drives">drives break-even</span></div>
+      <p class="group-note">Each cost sits in a different bucket, and that's what makes break-even behave. Put a cost where it actually scales.</p>
+      <div class="levers be">
 
         <div class="lever">
           <div class="lever-top"><label for="s-fee">Tuition / course</label><span class="lever-val" id="v-fee">13M</span></div>
           <input type="range" min="2" max="60" step="0.5" value="13" id="s-fee" />
+          <div class="hint">Per head → revenue. Collected upfront, recognized per month.</div>
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-vc">Variable cost / student</label><span class="lever-val" id="v-vc">3M</span></div>
-          <input type="range" min="0.5" max="15" step="0.25" value="3" id="s-vc" />
+          <div class="lever-top"><label for="s-vc">Variable cost / student / course</label><span class="lever-val" id="v-vc">3M</span></div>
+          <input type="range" min="0" max="15" step="0.25" value="3" id="s-vc" />
+          <div class="hint">Attaches to a <strong>head</strong> — books, materials, per-student admin. Scales with bodies.</div>
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-cf">Cost to run one class / mo</label><span class="lever-val" id="v-cf">18M</span></div>
-          <input type="range" min="5" max="50" step="1" value="18" id="s-cf" />
+          <div class="lever-top"><label for="s-tc">Teacher cost to run one class / mo</label><span class="lever-val" id="v-tc">12M</span></div>
+          <input type="range" min="0" max="40" step="0.5" value="12" id="s-tc" />
+          <div class="hint">Attaches to a <strong>class</strong> — marginal teaching for one section, regardless of how many sit in it. This is what creates a minimum class size. (Split salaried vs hourly below.)</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-ro">Room out-of-pocket / class / mo</label><span class="lever-val" id="v-ro">3M</span></div>
+          <input type="range" min="0" max="20" step="0.5" value="3" id="s-ro" />
+          <div class="hint">Electricity, AC, cleaning for the slot. Room <em>opportunity</em> cost is separate (Staffing &amp; rooms).</div>
         </div>
 
         <div class="lever">
           <div class="lever-top"><label for="s-cm">Course length (months)</label><span class="lever-val" id="v-cm">3</span></div>
-          <input type="range" min="1" max="8" step="1" value="3" id="s-cm" />
+          <input type="range" min="1" max="12" step="1" value="3" id="s-cm" />
+          <div class="hint">Time a student stays enrolled. Sets how long each cohort overlaps the next.</div>
         </div>
 
       </div>
     </div>
 
-    <div class="lever-group fill-levers">
-      <div class="lever-heading lever-heading--fill">Levers that set actual fill — how many bodies you seat</div>
-      <div class="levers">
+    <!-- ---- Staffing & rooms ---- -->
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--cap">Staffing &amp; rooms <span class="drives drives--cap">where cost lands &amp; the ceiling</span></div>
+      <div class="levers cap">
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-ftmix">Teaching that is salaried full-time</label><span class="lever-val" id="v-ftmix">30%</span></div>
+          <input type="range" min="0" max="100" step="5" value="30" id="s-ftmix" />
+          <div class="hint">Salaried FT teaching is a <strong>center fixed</strong> cost, not per-class. Hourly/part-time stays per-class. This split changes <em>break-even</em>, not total cash.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-cap">Physical class cap (students)</label><span class="lever-val" id="v-cap">18</span></div>
+          <input type="range" min="4" max="40" step="1" value="18" id="s-cap" />
+          <div class="hint">Hard ceiling on bodies per section.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-rooms">Rooms / simultaneous slots</label><span class="lever-val" id="v-rooms">12</span></div>
+          <input type="range" min="1" max="60" step="1" value="12" id="s-rooms" />
+          <div class="hint">How many classes can run at once. The binding constraint when demand is high.</div>
+        </div>
+
+        <label class="toggle">
+          <input type="checkbox" id="scarce" />
+          <span>Force <strong>rooms scarce</strong> — load opportunity cost even before slots are full</span>
+        </label>
+
+        <div class="lever" id="opp-wrap">
+          <div class="lever-top"><label for="s-opp">Opportunity cost / class when scarce</label><span class="lever-val" id="v-opp">8M</span></div>
+          <input type="range" min="0" max="40" step="0.5" value="8" id="s-opp" />
+          <div class="hint">When rooms are full, using one forgoes the next-best class's margin. Zero when rooms are spare; auto-loads when slots are full.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ---- Demand & distribution ---- -->
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--fill">Demand &amp; distribution <span class="drives drives--fill">drives actual fill</span></div>
+      <div class="levers fill">
 
         <div class="lever">
           <div class="lever-top"><label for="s-mkt">Marketing spend / month</label><span class="lever-val" id="v-mkt">400M</span></div>
@@ -76,22 +126,52 @@
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-wait">Max wait time</label><span class="lever-val" id="v-wait">4 wks</span></div>
+          <div class="lever-top"><label for="s-wait">Max wait tolerance</label><span class="lever-val" id="v-wait">4 wks</span></div>
           <input type="range" min="1" max="36" step="1" value="4" id="s-wait" />
-        </div>
-
-        <div class="lever">
-          <div class="lever-top"><label for="s-fix">Fixed cost / month</label><span class="lever-val" id="v-fix">500M</span></div>
-          <input type="range" min="20" max="2000" step="10" value="500" id="s-fix" />
+          <div class="hint">How long a prospect will wait for a class to start before walking. Bites when intakes are spaced far apart.</div>
         </div>
 
       </div>
+
+      <div class="seg-row">
+        <div class="seg-block">
+          <div class="seg-label">Enrollment mode</div>
+          <div class="segmented" id="seg-mode">
+            <button type="button" data-mode="cohort" class="on">Cohort-based</button>
+            <button type="button" data-mode="rolling">Rolling</button>
+          </div>
+          <div class="hint" id="mode-hint">Classes start, run, and end together. Students pool over the wait window, then a cohort launches.</div>
+        </div>
+
+        <div class="seg-block" id="intake-block">
+          <div class="seg-label">Intake interval <span class="muted">(how often new classes start)</span></div>
+          <div class="segmented" id="seg-intake">
+            <button type="button" data-intake="1" class="on">Monthly</button>
+            <button type="button" data-intake="2">Bi-monthly</button>
+            <button type="button" data-intake="3">Quarterly</button>
+          </div>
+          <div class="hint">Overlap = course length ÷ intake interval. Monthly intake + 3-month course = 3 simultaneous cohorts.</div>
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="elastic" checked />
+        <span>Tuition affects conversion (price elasticity) — the only indirect path from price to fill</span>
+      </label>
     </div>
 
-    <label class="toggle">
-      <input type="checkbox" id="elastic" checked />
-      <span>Tuition affects conversion (price elasticity) — the only indirect path from price to fill</span>
-    </label>
+    <!-- ---- Center overhead ---- -->
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--be">Center overhead <span class="drives">whole-center fixed</span></div>
+      <div class="levers be">
+        <div class="lever">
+          <div class="lever-top"><label for="s-fix">Fixed cost / month</label><span class="lever-val" id="v-fix">500M</span></div>
+          <input type="range" min="0" max="3000" step="10" value="500" id="s-fix" />
+          <div class="hint">Attaches to the <strong>whole center</strong> — office staff, management, non-classroom lease, marketing overhead. Independent of class or student count. Salaried teaching (above) is added on top of this.</div>
+        </div>
+      </div>
+    </div>
+
   </section>
 
   <!-- ============ RESULTS ============ -->
@@ -111,118 +191,211 @@
     </div>
 
     <div id="gap" class="gap"></div>
+    <div id="cap-badge" class="badge"></div>
 
     <div class="kpis">
       <div class="kpi"><div class="kpi-label">Monthly leads</div><div class="kpi-num" id="o-leads">—</div></div>
-      <div class="kpi"><div class="kpi-label">Enrolled / month</div><div class="kpi-num" id="o-enroll">—</div></div>
-      <div class="kpi"><div class="kpi-label">Active students</div><div class="kpi-num" id="o-active">—</div></div>
+      <div class="kpi"><div class="kpi-label">Seated enrollments / mo</div><div class="kpi-num" id="o-enroll">—</div></div>
+      <div class="kpi"><div class="kpi-label" title="All overlapping cohorts in the building, not one intake">Active students <span class="muted">(whole building)</span></div><div class="kpi-num" id="o-active">—</div></div>
       <div class="kpi"><div class="kpi-label">Monthly profit</div><div class="kpi-num" id="o-profit">—</div></div>
     </div>
 
     <div class="detail">
+      <div class="detail-title">Monthly P&amp;L <span class="muted">— scaled for overlapping cohorts</span></div>
       <table>
-        <tr><td>Contribution / student</td><td class="num" id="t-contrib">—</td></tr>
+        <tr><td>Revenue</td><td class="num" id="p-rev">—</td></tr>
+        <tr><td>− Per-student (variable)</td><td class="num neg" id="p-var">—</td></tr>
+        <tr><td>− Per-class (teacher + room OOP)</td><td class="num neg" id="p-class">—</td></tr>
+        <tr><td>− Center fixed <span class="muted" id="p-fix-note"></span></td><td class="num neg" id="p-fix">—</td></tr>
+        <tr class="total"><td>= Monthly profit</td><td class="num" id="p-profit">—</td></tr>
+      </table>
+    </div>
+
+    <div class="detail">
+      <div class="detail-title">Per-unit ratios <span class="muted">— unscaled, per single unit</span></div>
+      <table>
+        <tr><td>Contribution / student / mo</td><td class="num" id="t-contrib">—</td></tr>
+        <tr><td>Marginal cost / class</td><td class="num" id="t-mcc">—</td></tr>
         <tr><td>Margin per class</td><td class="num" id="t-mc">—</td></tr>
-        <tr><td>Effective conversion (after price effect)</td><td class="num" id="t-ec">—</td></tr>
-        <tr><td>CAC / enrolled student</td><td class="num" id="t-cac">—</td></tr>
+        <tr><td>Effective conversion (after price)</td><td class="num" id="t-ec">—</td></tr>
+        <tr><td>CAC / seated student</td><td class="num" id="t-cac">—</td></tr>
         <tr><td>LTV / CAC</td><td class="num" id="t-ratio">—</td></tr>
       </table>
+    </div>
+
+    <div class="detail">
+      <div class="detail-title">Capacity &amp; overlap</div>
+      <table>
+        <tr><td>Cohort overlap multiplier</td><td class="num" id="t-overlap">—</td></tr>
+        <tr><td>Classes running now</td><td class="num" id="t-classes">—</td></tr>
+        <tr><td>Room utilization</td><td class="num" id="t-util">—</td></tr>
+      </table>
+    </div>
+
+    <label class="toggle toggle--wide">
+      <input type="checkbox" id="deferred" />
+      <span>Show cash vs. realized revenue (deferred-revenue view)</span>
+    </label>
+
+    <div class="detail" id="deferred-panel" hidden>
+      <div class="detail-title">Cash vs. realized <span class="muted">— tuition collected upfront, earned per month</span></div>
+      <table>
+        <tr><td>Cash collected / mo (upfront)</td><td class="num" id="d-cash">—</td></tr>
+        <tr><td>Recognized revenue / mo (earned)</td><td class="num" id="d-real">—</td></tr>
+        <tr><td>Unearned tuition on the books (est.)</td><td class="num" id="d-unearned">—</td></tr>
+      </table>
+      <p class="hint">The unearned balance is cash you hold but owe as future teaching — not freely spendable.</p>
     </div>
 
   </section>
 
 </div>
 
-<p class="footer-note">Amounts in VND millions unless labelled otherwise. Drag the sliders to explore.</p>
+<p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
 
 <script>
 (function(){
-  const beIds   = ['fee','vc','cf','cm'];
-  const fillIds = ['mkt','cpl','conv','lvl','wait','fix'];
-  const ids = beIds.concat(fillIds);
-  const el = {};
-  ids.forEach(i => { el['s-'+i] = document.getElementById('s-'+i); el['v-'+i] = document.getElementById('v-'+i); });
-  const out = id => document.getElementById(id);
-  const elasticBox = document.getElementById('elastic');
+  const CY='#38bdf8', EM='#34d399', VI='#a78bfa', TRACK='rgba(255,255,255,.10)';
+  const ACCENT = {
+    fee:CY, vc:CY, tc:CY, ro:CY, cm:CY, fix:CY,
+    ftmix:VI, cap:VI, rooms:VI, opp:VI,
+    mkt:EM, cpl:EM, conv:EM, lvl:EM, wait:EM
+  };
+  const sliderIds = Object.keys(ACCENT);
 
-  const ACCENT_BE = '#38bdf8', ACCENT_FILL = '#34d399', TRACK = 'rgba(255,255,255,.10)';
-  const fmtM = n => { if (Math.abs(n) >= 1000) return (n/1000).toFixed(2)+'B'; return Math.round(n)+'M'; };
+  const $ = id => document.getElementById(id);
+  const num = id => +$('s-'+id).value;
+  const fmtM = n => { const a=Math.abs(n); if (a>=1000) return (n/1000).toFixed(2)+'B'; return Math.round(n)+'M'; };
+  const fmtM1 = n => { const a=Math.abs(n); if (a>=1000) return (n/1000).toFixed(2)+'B'; return n.toFixed(1)+'M'; };
   const fmtK = n => Math.round(n)+'k';
+  const clamp = (x,lo,hi) => Math.max(lo, Math.min(hi, x));
 
-  // Paint a glowing filled track up to the current value.
-  function paintTrack(i){
-    const s = el['s-'+i];
+  // segmented state
+  let mode = 'cohort';
+  let intakeMonths = 1;
+
+  function paintTrack(id){
+    const s = $('s-'+id);
     const pct = (s.value - s.min) / (s.max - s.min) * 100;
-    const accent = fillIds.includes(i) ? ACCENT_FILL : ACCENT_BE;
-    s.style.background = 'linear-gradient(90deg, '+accent+' 0 '+pct+'%, '+TRACK+' '+pct+'% 100%)';
+    s.style.background = 'linear-gradient(90deg, '+ACCENT[id]+' 0 '+pct+'%, '+TRACK+' '+pct+'% 100%)';
   }
 
+  function setText(id, v, color){ const e=$(id); e.textContent=v; if(color!==undefined) e.style.color=color; }
+
   function compute(){
-    const fee  = +el['s-fee'].value;
-    const vc   = +el['s-vc'].value;
-    const cf   = +el['s-cf'].value;
-    const cm   = +el['s-cm'].value;
-    const mkt  = +el['s-mkt'].value;
-    const cpl  = +el['s-cpl'].value;
-    const conv = +el['s-conv'].value;
-    const lvl  = +el['s-lvl'].value;
-    const wait = +el['s-wait'].value;
-    const fix  = +el['s-fix'].value;
+    sliderIds.forEach(paintTrack);
 
-    ids.forEach(paintTrack);
+    const fee=num('fee'), vc=num('vc'), tc=num('tc'), ro=num('ro'), cm=num('cm');
+    const ftmix=num('ftmix')/100, cap=num('cap'), rooms=num('rooms'), opp=num('opp');
+    const mkt=num('mkt'), cpl=num('cpl'), conv=num('conv'), lvl=num('lvl'), wait=num('wait');
+    const fix=num('fix');
+    const useElastic = $('elastic').checked;
+    const forceScarce = $('scarce').checked;
 
-    el['v-fee'].textContent  = fmtM(fee);
-    el['v-vc'].textContent   = fmtM(vc);
-    el['v-cf'].textContent   = fmtM(cf);
-    el['v-cm'].textContent   = cm;
-    el['v-mkt'].textContent  = fmtM(mkt);
-    el['v-cpl'].textContent  = fmtK(cpl);
-    el['v-conv'].textContent = conv+'%';
-    el['v-lvl'].textContent  = lvl;
-    el['v-wait'].textContent = wait+(wait===1?' wk':' wks');
-    el['v-fix'].textContent  = fmtM(fix);
+    // ---- value labels ----
+    setText('v-fee', fmtM(fee)); setText('v-vc', fmtM(vc)); setText('v-tc', fmtM(tc));
+    setText('v-ro', fmtM(ro)); setText('v-cm', cm); setText('v-fix', fmtM(fix));
+    setText('v-ftmix', Math.round(ftmix*100)+'%'); setText('v-cap', cap); setText('v-rooms', rooms);
+    setText('v-opp', fmtM(opp));
+    setText('v-mkt', fmtM(mkt)); setText('v-cpl', fmtK(cpl)); setText('v-conv', conv+'%');
+    setText('v-lvl', lvl); setText('v-wait', wait+(wait===1?' wk':' wks'));
 
+    // =========================================================
+    //  PER-UNIT ECONOMICS  (unscaled — these are ratios)
+    // =========================================================
     const feePerMonth = fee / cm;
     const vcPerMonth = vc / cm;
-    const contribPerStudent = feePerMonth - vcPerMonth;
-    const breakEven = contribPerStudent > 0 ? (cf / contribPerStudent) : 999;
+    const contribPerStudent = feePerMonth - vcPerMonth;            // per student / month
 
+    // Demand for fill comes first so we can know if rooms are scarce.
     const leads = (mkt * 1000) / cpl;
-    const useElastic = elasticBox.checked;
     const feeElastic = useElastic ? Math.pow(13 / fee, 0.45) : 1;
     const effConv = Math.min(0.6, (conv/100) * feeElastic);
-    const enrolled = leads * effConv;
+    const enrolledPerMonth = leads * effConv;                       // center-wide arrival rate / month
+    const inPerLevelPerMonth = lvl > 0 ? enrolledPerMonth / lvl : 0;
 
-    const perLevel = enrolled / lvl;
-    const pooled = perLevel * (wait / 4);
-    let abandon = 0;
-    if (wait > 8) abandon = Math.min(0.6, (wait - 8) * 0.05);
-    const seated = pooled * (1 - abandon);
-    const cap = 18;
-    const classSize = Math.min(cap, seated);
+    // =========================================================
+    //  FILL ENGINE  (class size + how many classes run at once)
+    // =========================================================
+    let classSize, classesNeeded, overlap, abandon = 0;
 
-    const activeStudents = classSize * lvl;
+    if (mode === 'cohort'){
+      // Students accumulate between intake starts, then a cohort launches.
+      const accumMonths = intakeMonths;
+      const avgWaitWeeks = (intakeMonths * 4) / 2;                  // avg wait ~ half the interval
+      abandon = clamp((avgWaitWeeks - wait) / Math.max(wait,1) * 0.5, 0, 0.6);
+      const launchSize = inPerLevelPerMonth * accumMonths * (1 - abandon);
+      classSize = Math.min(cap, launchSize);
+      overlap = cm / intakeMonths;                                  // simultaneous cohorts per level
+      classesNeeded = lvl * overlap;
+    } else {
+      // Rolling: join an ongoing class immediately; steady-state headcount via Little's law.
+      const activePerLevelUncapped = inPerLevelPerMonth * cm;       // arrival rate × dwell
+      const sectionsPerLevel = Math.max(1, Math.ceil(activePerLevelUncapped / cap));
+      classSize = activePerLevelUncapped / sectionsPerLevel;        // avg per running section
+      overlap = cm;                                                 // cohorts overlap fully
+      classesNeeded = lvl * sectionsPerLevel;
+    }
+
+    // =========================================================
+    //  CAPACITY CEILING  (#7)
+    // =========================================================
+    const classesPossible = Math.min(classesNeeded, rooms);
+    const fillRatio = classesNeeded > 0 ? classesPossible / classesNeeded : 0;
+    const utilization = rooms > 0 ? classesNeeded / rooms : 0;
+    const capacityConstrained = classesNeeded > rooms + 1e-9;
+    const roomsScarce = forceScarce || capacityConstrained;
+
+    // =========================================================
+    //  PER-CLASS MARGINAL COST  (break-even uses this) (#4/#5/#6)
+    //  - only the HOURLY part of teacher is marginal; salaried is fixed
+    //  - room cost = out-of-pocket + opportunity (only when scarce)
+    // =========================================================
+    const hourlyTeacherPerClass = tc * (1 - ftmix);
+    const roomCostPerClass = ro + (roomsScarce ? opp : 0);
+    const marginalClassCost = hourlyTeacherPerClass + roomCostPerClass;
+    const breakEven = contribPerStudent > 0 ? marginalClassCost / contribPerStudent : 999;
+
+    // =========================================================
+    //  ABSOLUTE TOTALS  (scaled by overlap via classesPossible) (#2)
+    // =========================================================
+    const activeStudents = classSize * classesPossible;            // whole building, all cohorts
+    const seatedPerMonth = cm > 0 ? activeStudents / cm : 0;        // throughput in = out
+
     const revenue = activeStudents * feePerMonth;
-    const varCost = activeStudents * vcPerMonth;
-    const profit = revenue - varCost - fix;
-    const marginPerClass = classSize * contribPerStudent - cf;
+    const varCostTotal = activeStudents * vcPerMonth;
+    const classCashTotal = (tc + ro) * classesPossible;            // teacher (all) + room OOP, cash
+    const salariedTeacherCost = tc * ftmix * classesPossible;      // share of the above that is "fixed-like"
+    const profit = revenue - varCostTotal - classCashTotal - fix;
 
-    const cac = enrolled > 0 ? (mkt / enrolled) : 0;
+    // =========================================================
+    //  PER-UNIT RATIOS (unscaled)
+    // =========================================================
+    const marginPerClass = classSize * contribPerStudent - marginalClassCost;
+    const cac = seatedPerMonth > 0 ? (mkt / seatedPerMonth) : 0;    // per actually-seated student
     const ltv = fee - vc;
     const ratio = cac > 0 ? (ltv / cac) : 0;
 
-    out('o-be').textContent = breakEven > 99 ? 'n/a' : breakEven.toFixed(1);
-    out('o-cs').textContent = classSize.toFixed(1);
-    out('o-leads').textContent = Math.round(leads);
-    out('o-enroll').textContent = Math.round(enrolled);
-    out('o-active').textContent = Math.round(activeStudents);
-    const pEl = out('o-profit');
-    pEl.textContent = fmtM(profit);
-    pEl.style.color = profit >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)';
+    // =========================================================
+    //  DEFERRED REVENUE (#8)
+    // =========================================================
+    const cashIn = seatedPerMonth * fee;                           // collected upfront on enrolment
+    const recognized = revenue;                                    // earned this month
+    const unearned = activeStudents * feePerMonth * Math.max(0,(cm-1))/2; // owed as future teaching
 
-    const g = out('gap');
+    // =========================================================
+    //  RENDER
+    // =========================================================
+    setText('o-be', breakEven > 99 ? 'n/a' : breakEven.toFixed(1));
+    setText('o-cs', classSize.toFixed(1));
+    setText('o-leads', Math.round(leads));
+    setText('o-enroll', Math.round(seatedPerMonth));
+    setText('o-active', Math.round(activeStudents));
+    setText('o-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
+
+    // gap indicator
+    const g = $('gap'); g.classList.remove('gap--good','gap--bad');
     const surplus = classSize - breakEven;
-    g.classList.remove('gap--good','gap--bad');
     if (breakEven > 99){
       g.textContent = 'Variable cost exceeds tuition per month — no class size is profitable.';
       g.classList.add('gap--bad');
@@ -230,21 +403,82 @@
       g.textContent = 'You fill '+classSize.toFixed(1)+' vs '+breakEven.toFixed(1)+' needed — '+surplus.toFixed(1)+' students of cushion above break-even.';
       g.classList.add('gap--good');
     } else {
-      g.textContent = 'You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+' students. Every class loses money.';
+      g.textContent = 'You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+'. Every class loses money.';
       g.classList.add('gap--bad');
     }
 
-    out('t-contrib').textContent = fmtM(contribPerStudent)+' / mo';
-    const mc = out('t-mc'); mc.textContent = fmtM(marginPerClass)+' / class';
-    mc.style.color = marginPerClass >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)';
-    out('t-ec').textContent = (effConv*100).toFixed(1)+'%';
-    out('t-cac').textContent = fmtM(cac);
-    const r = out('t-ratio'); r.textContent = ratio.toFixed(1)+'×';
-    r.style.color = ratio >= 3 ? 'var(--color-text-success)' : (ratio >= 1.5 ? 'var(--color-text-warning)' : 'var(--color-text-danger)');
+    // capacity badge
+    const b = $('cap-badge'); b.classList.remove('badge--cap','badge--demand','badge--ok');
+    if (capacityConstrained){
+      b.textContent = 'Capacity-constrained — rooms full ('+utilization.toFixed(1)+'×). Extra marketing only inflates leads & CAC; no new seats.';
+      b.classList.add('badge--cap');
+    } else if (classSize < cap - 0.05){
+      b.textContent = 'Demand-constrained — empty seats, rooms to spare ('+Math.round(utilization*100)+'% used). Marketing & conversion add students.';
+      b.classList.add('badge--demand');
+    } else {
+      b.textContent = 'Tight — classes near the cap and rooms nearly full ('+Math.round(utilization*100)+'% used).';
+      b.classList.add('badge--ok');
+    }
+
+    // P&L
+    setText('p-rev', fmtM(revenue));
+    setText('p-var', '−'+fmtM(varCostTotal));
+    setText('p-class', '−'+fmtM(classCashTotal));
+    setText('p-fix', '−'+fmtM(fix));
+    setText('p-fix-note', salariedTeacherCost>0 ? '(+ '+fmtM(salariedTeacherCost)+' salaried teaching sits in per-class above)' : '');
+    setText('p-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
+
+    // ratios
+    setText('t-contrib', fmtM1(contribPerStudent)+' / mo');
+    setText('t-mcc', fmtM1(marginalClassCost)+(roomsScarce?' (incl. opp.)':''));
+    setText('t-mc', fmtM1(marginPerClass)+' / class', marginPerClass>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
+    setText('t-ec', (effConv*100).toFixed(1)+'%');
+    setText('t-cac', fmtM1(cac));
+    setText('t-ratio', ratio.toFixed(1)+'×', ratio>=3 ? 'var(--color-text-success)' : (ratio>=1.5 ? 'var(--color-text-warning)' : 'var(--color-text-danger)'));
+
+    // capacity & overlap
+    setText('t-overlap', overlap.toFixed(2)+'×');
+    setText('t-classes', classesPossible.toFixed(1)+' / '+rooms+' slots');
+    setText('t-util', Math.round(utilization*100)+'%', capacityConstrained ? 'var(--color-text-danger)' : 'var(--text)');
+
+    // deferred
+    setText('d-cash', fmtM(cashIn));
+    setText('d-real', fmtM(recognized));
+    setText('d-unearned', fmtM(unearned));
   }
 
-  ids.forEach(i => el['s-'+i].addEventListener('input', compute));
-  elasticBox.addEventListener('change', compute);
+  // ---- wiring ----
+  sliderIds.forEach(id => $('s-'+id).addEventListener('input', compute));
+  $('elastic').addEventListener('change', compute);
+  $('scarce').addEventListener('change', compute);
+
+  // segmented: enrollment mode
+  $('seg-mode').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    mode = btn.dataset.mode;
+    [...$('seg-mode').children].forEach(c => c.classList.toggle('on', c===btn));
+    const rolling = mode === 'rolling';
+    $('intake-block').classList.toggle('disabled', rolling);
+    $('mode-hint').textContent = rolling
+      ? 'Students join an ongoing class as they arrive; class size accumulates over time. Intake is continuous, so the interval no longer applies.'
+      : 'Classes start, run, and end together. Students pool over the wait window, then a cohort launches.';
+    compute();
+  });
+
+  // segmented: intake interval
+  $('seg-intake').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    if ($('intake-block').classList.contains('disabled')) return;
+    intakeMonths = +btn.dataset.intake;
+    [...$('seg-intake').children].forEach(c => c.classList.toggle('on', c===btn));
+    compute();
+  });
+
+  // deferred panel toggle
+  $('deferred').addEventListener('change', e => {
+    $('deferred-panel').hidden = !e.target.checked;
+  });
+
   compute();
 })();
 </script>
