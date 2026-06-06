@@ -445,6 +445,48 @@
     setText('d-cash', fmtM(cashIn));
     setText('d-real', fmtM(recognized));
     setText('d-unearned', fmtM(unearned));
+
+    saveState();
+  }
+
+  // =========================================================
+  //  PERSISTENCE  (remember last-used values across visits)
+  // =========================================================
+  const STORAGE_KEY = 'ecm.state.v1';
+
+  function saveState(){
+    try{
+      const s = { mode, intakeMonths,
+        elastic: $('elastic').checked, scarce: $('scarce').checked, deferred: $('deferred').checked };
+      sliderIds.forEach(id => s['s-'+id] = $('s-'+id).value);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    }catch(e){ /* private mode / storage disabled — just skip */ }
+  }
+
+  function loadState(){
+    let s; try{ s = JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ s = null; }
+    if (!s) return;
+    sliderIds.forEach(id => { if (s['s-'+id] !== undefined) $('s-'+id).value = s['s-'+id]; });
+    if (typeof s.elastic === 'boolean') $('elastic').checked = s.elastic;
+    if (typeof s.scarce === 'boolean') $('scarce').checked = s.scarce;
+    if (typeof s.deferred === 'boolean'){ $('deferred').checked = s.deferred; $('deferred-panel').hidden = !s.deferred; }
+    if (s.mode) applyMode(s.mode);
+    if (s.intakeMonths) applyIntake(s.intakeMonths);
+  }
+
+  // ---- segmented setters (shared by clicks + restore) ----
+  function applyMode(m){
+    mode = m;
+    [...$('seg-mode').children].forEach(c => c.classList.toggle('on', c.dataset.mode===m));
+    const rolling = m === 'rolling';
+    $('intake-block').classList.toggle('disabled', rolling);
+    $('mode-hint').textContent = rolling
+      ? 'Students join an ongoing class as they arrive; class size accumulates over time. Intake is continuous, so the interval no longer applies.'
+      : 'Classes start, run, and end together. Students pool over the wait window, then a cohort launches.';
+  }
+  function applyIntake(n){
+    intakeMonths = +n;
+    [...$('seg-intake').children].forEach(c => c.classList.toggle('on', +c.dataset.intake===intakeMonths));
   }
 
   // ---- wiring ----
@@ -452,33 +494,20 @@
   $('elastic').addEventListener('change', compute);
   $('scarce').addEventListener('change', compute);
 
-  // segmented: enrollment mode
   $('seg-mode').addEventListener('click', e => {
     const btn = e.target.closest('button'); if (!btn) return;
-    mode = btn.dataset.mode;
-    [...$('seg-mode').children].forEach(c => c.classList.toggle('on', c===btn));
-    const rolling = mode === 'rolling';
-    $('intake-block').classList.toggle('disabled', rolling);
-    $('mode-hint').textContent = rolling
-      ? 'Students join an ongoing class as they arrive; class size accumulates over time. Intake is continuous, so the interval no longer applies.'
-      : 'Classes start, run, and end together. Students pool over the wait window, then a cohort launches.';
-    compute();
+    applyMode(btn.dataset.mode); compute();
   });
-
-  // segmented: intake interval
   $('seg-intake').addEventListener('click', e => {
     const btn = e.target.closest('button'); if (!btn) return;
     if ($('intake-block').classList.contains('disabled')) return;
-    intakeMonths = +btn.dataset.intake;
-    [...$('seg-intake').children].forEach(c => c.classList.toggle('on', c===btn));
-    compute();
+    applyIntake(btn.dataset.intake); compute();
   });
-
-  // deferred panel toggle
   $('deferred').addEventListener('change', e => {
-    $('deferred-panel').hidden = !e.target.checked;
+    $('deferred-panel').hidden = !e.target.checked; saveState();
   });
 
+  loadState();
   compute();
 })();
 </script>
