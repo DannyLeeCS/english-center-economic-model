@@ -5,316 +5,157 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>English Center — Class Size Economic Model</title>
 <meta name="description" content="Interactive model separating the class size you can afford (break-even) from the class size you actually fill." />
-<style>
-  :root{
-    --color-background-primary:#ffffff;
-    --color-background-secondary:#f5f7fa;
-    --color-text-primary:#16202e;
-    --color-text-secondary:#5b6675;
-    --color-border-tertiary:#e4e9f0;
-
-    --border-radius-md:10px;
-    --border-radius-lg:16px;
-
-    --color-text-success:#0f6e56;
-    --color-text-danger:#c43d2f;
-    --color-text-warning:#b7791f;
-    --color-background-success:#e7f4ef;
-    --color-background-danger:#fdecea;
-
-    --accent-be:#185fa5;
-    --accent-fill:#0f6e56;
-
-    --shadow-card:0 1px 2px rgba(16,32,46,.04), 0 8px 30px rgba(16,32,46,.06);
-  }
-
-  *{ box-sizing:border-box; }
-
-  html,body{ margin:0; padding:0; }
-
-  body{
-    font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    color:var(--color-text-primary);
-    background:
-      radial-gradient(1200px 600px at 50% -10%, #eef3f9 0%, rgba(238,243,249,0) 70%),
-      linear-gradient(180deg, #fbfcfe 0%, #f2f5f9 100%);
-    background-attachment:fixed;
-    min-height:100vh;
-    line-height:1.45;
-    -webkit-font-smoothing:antialiased;
-    text-rendering:optimizeLegibility;
-  }
-
-  .page{
-    max-width:760px;
-    margin:0 auto;
-    padding:48px 20px 64px;
-  }
-
-  .page-header{
-    margin-bottom:1.5rem;
-  }
-  .page-header h1{
-    font-size:24px;
-    font-weight:600;
-    letter-spacing:-0.01em;
-    margin:0 0 6px;
-  }
-  .page-header p{
-    margin:0;
-    font-size:14px;
-    color:var(--color-text-secondary);
-    max-width:60ch;
-  }
-
-  .card{
-    background:var(--color-background-primary);
-    border:0.5px solid var(--color-border-tertiary);
-    border-radius:20px;
-    box-shadow:var(--shadow-card);
-    padding:24px 28px 28px;
-  }
-
-  .sr-only{
-    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
-  }
-
-  /* Metric / stat tiles get a subtle lift on hover */
-  .stat-tile{
-    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  }
-  .stat-tile:hover{
-    transform:translateY(-1px);
-    box-shadow:0 6px 18px rgba(16,32,46,.07);
-  }
-
-  /* Section heading above each lever group */
-  .lever-heading{
-    display:flex; align-items:center; gap:8px;
-  }
-  .lever-heading::after{
-    content:""; flex:1; height:1px;
-    background:linear-gradient(90deg, var(--color-border-tertiary), transparent);
-  }
-
-  label{ user-select:none; }
-
-  /* ---- Sleek range sliders ---- */
-  input[type="range"]{
-    -webkit-appearance:none; appearance:none;
-    height:6px; border-radius:999px;
-    background:var(--color-border-tertiary);
-    outline:none; cursor:pointer; margin:6px 0;
-  }
-  input[type="range"]::-webkit-slider-thumb{
-    -webkit-appearance:none; appearance:none;
-    width:18px; height:18px; border-radius:50%;
-    background:#fff;
-    border:2px solid var(--accent-be);
-    box-shadow:0 1px 3px rgba(16,32,46,.18);
-    transition:transform .12s ease, box-shadow .12s ease;
-  }
-  input[type="range"]::-webkit-slider-thumb:hover{ transform:scale(1.12); }
-  input[type="range"]:active::-webkit-slider-thumb{
-    box-shadow:0 0 0 6px rgba(24,95,165,.14);
-  }
-  input[type="range"]::-moz-range-thumb{
-    width:18px; height:18px; border-radius:50%;
-    background:#fff; border:2px solid var(--accent-be);
-    box-shadow:0 1px 3px rgba(16,32,46,.18); cursor:pointer;
-  }
-  input[type="range"]::-moz-range-track{
-    height:6px; border-radius:999px; background:var(--color-border-tertiary);
-  }
-
-  /* Levers in the green group use the green accent thumb */
-  .fill-levers input[type="range"]::-webkit-slider-thumb{ border-color:var(--accent-fill); }
-  .fill-levers input[type="range"]:active::-webkit-slider-thumb{ box-shadow:0 0 0 6px rgba(15,110,86,.14); }
-  .fill-levers input[type="range"]::-moz-range-thumb{ border-color:var(--accent-fill); }
-
-  input[type="checkbox"]{
-    width:16px; height:16px; accent-color:var(--accent-fill); cursor:pointer;
-  }
-
-  table td{ border-bottom:0.5px solid var(--color-border-tertiary); }
-  table tr:last-child td{ border-bottom:0; }
-
-  .footer-note{
-    margin-top:1.25rem; text-align:center;
-    font-size:12px; color:var(--color-text-secondary);
-  }
-
-  @media (max-width:560px){
-    .page{ padding:28px 14px 48px; }
-    .card{ padding:18px 16px 22px; }
-  }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <main class="page">
 
 <header class="page-header">
-  <h1>Class size you can afford vs. class size you fill</h1>
+  <h1>Class size you can <span class="grad-be">afford</span> vs. class size you <span class="grad-fill">fill</span></h1>
   <p>An interactive model that separates the class size your unit economics <em>require</em> (break-even, set by tuition and cost) from the class size you actually <em>fill</em> (set by enrollment, levels, and wait time).</p>
 </header>
 
-<div class="card">
-<h2 class="sr-only">Interactive model separating the class size you can afford (set by tuition and cost) from the class size you actually fill (set by enrollment, levels, and wait time).</h2>
+<div class="layout">
 
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:1rem;">
-  <div class="stat-tile" style="background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; border-left:3px solid #185FA5; border-radius:0 var(--border-radius-lg) var(--border-radius-lg) 0;">
-    <div style="font-size:12px; color:var(--color-text-secondary); text-transform:none;">Set by tuition + cost</div>
-    <div style="font-size:13px; color:#185FA5; font-weight:500; margin-top:2px;">Break-even size — what you need</div>
-    <div style="font-size:28px; font-weight:500; margin-top:6px;" id="o-be">—</div>
-  </div>
-  <div class="stat-tile" style="background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; border-left:3px solid #0F6E56; border-radius:0 var(--border-radius-lg) var(--border-radius-lg) 0;">
-    <div style="font-size:12px; color:var(--color-text-secondary);">Set by enrollment + levels + wait</div>
-    <div style="font-size:13px; color:#0F6E56; font-weight:500; margin-top:2px;">Actual size — what you fill</div>
-    <div style="font-size:28px; font-weight:500; margin-top:6px;" id="o-cs">—</div>
-  </div>
-</div>
+  <!-- ============ CONTROLS ============ -->
+  <section class="card controls">
+    <h2 class="sr-only">Levers</h2>
 
-<div id="gap" style="font-size:13px; padding:9px 14px; border-radius:var(--border-radius-md); margin-bottom:1.25rem; text-align:center;"></div>
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--be">Levers that set break-even — what you can afford</div>
+      <div class="levers">
 
-<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:1.5rem;">
-  <div class="stat-tile" style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
-    <div style="font-size:13px; color:var(--color-text-secondary);">Monthly leads</div>
-    <div style="font-size:22px; font-weight:500;" id="o-leads">—</div>
-  </div>
-  <div class="stat-tile" style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
-    <div style="font-size:13px; color:var(--color-text-secondary);">Enrolled / month</div>
-    <div style="font-size:22px; font-weight:500;" id="o-enroll">—</div>
-  </div>
-  <div class="stat-tile" style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
-    <div style="font-size:13px; color:var(--color-text-secondary);">Active students</div>
-    <div style="font-size:22px; font-weight:500;" id="o-active">—</div>
-  </div>
-  <div class="stat-tile" style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem;">
-    <div style="font-size:13px; color:var(--color-text-secondary);">Monthly profit</div>
-    <div style="font-size:22px; font-weight:500;" id="o-profit">—</div>
-  </div>
-</div>
+        <div class="lever">
+          <div class="lever-top"><label for="s-fee">Tuition / course</label><span class="lever-val" id="v-fee">13M</span></div>
+          <input type="range" min="2" max="60" step="0.5" value="13" id="s-fee" />
+        </div>
 
-<div class="lever-heading" style="font-size:12px; color:#185FA5; font-weight:500; margin-bottom:8px; text-transform:none;">Levers that set break-even (what you can afford)</div>
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px 32px; margin-bottom:1.5rem; padding:14px 16px; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg);">
+        <div class="lever">
+          <div class="lever-top"><label for="s-vc">Variable cost / student</label><span class="lever-val" id="v-vc">3M</span></div>
+          <input type="range" min="0.5" max="15" step="0.25" value="3" id="s-vc" />
+        </div>
 
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Tuition / course</label>
-      <span style="font-size:14px; font-weight:500;" id="v-fee">13M</span>
+        <div class="lever">
+          <div class="lever-top"><label for="s-cf">Cost to run one class / mo</label><span class="lever-val" id="v-cf">18M</span></div>
+          <input type="range" min="5" max="50" step="1" value="18" id="s-cf" />
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-cm">Course length (months)</label><span class="lever-val" id="v-cm">3</span></div>
+          <input type="range" min="1" max="8" step="1" value="3" id="s-cm" />
+        </div>
+
+      </div>
     </div>
-    <input type="range" min="2" max="60" step="0.5" value="13" id="s-fee" style="width:100%;" />
-  </div>
 
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Variable cost / student</label>
-      <span style="font-size:14px; font-weight:500;" id="v-vc">3M</span>
+    <div class="lever-group fill-levers">
+      <div class="lever-heading lever-heading--fill">Levers that set actual fill — how many bodies you seat</div>
+      <div class="levers">
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-mkt">Marketing spend / month</label><span class="lever-val" id="v-mkt">400M</span></div>
+          <input type="range" min="0" max="2000" step="10" value="400" id="s-mkt" />
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-cpl">Cost per lead (CPL)</label><span class="lever-val" id="v-cpl">720k</span></div>
+          <input type="range" min="20" max="2000" step="10" value="720" id="s-cpl" />
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-conv">Lead → enroll rate</label><span class="lever-val" id="v-conv">6%</span></div>
+          <input type="range" min="1" max="60" step="1" value="6" id="s-conv" />
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-lvl">Number of levels</label><span class="lever-val" id="v-lvl">6</span></div>
+          <input type="range" min="2" max="30" step="1" value="6" id="s-lvl" />
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-wait">Max wait time</label><span class="lever-val" id="v-wait">4 wks</span></div>
+          <input type="range" min="1" max="36" step="1" value="4" id="s-wait" />
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-fix">Fixed cost / month</label><span class="lever-val" id="v-fix">500M</span></div>
+          <input type="range" min="20" max="2000" step="10" value="500" id="s-fix" />
+        </div>
+
+      </div>
     </div>
-    <input type="range" min="0.5" max="15" step="0.25" value="3" id="s-vc" style="width:100%;" />
-  </div>
 
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Cost to run one class / mo</label>
-      <span style="font-size:14px; font-weight:500;" id="v-cf">18M</span>
+    <label class="toggle">
+      <input type="checkbox" id="elastic" checked />
+      <span>Tuition affects conversion (price elasticity) — the only indirect path from price to fill</span>
+    </label>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section class="results">
+
+    <div class="hero-tiles">
+      <div class="tile tile--be">
+        <div class="tile-cap">Set by tuition + cost</div>
+        <div class="tile-label">Break-even size — what you need</div>
+        <div class="tile-num" id="o-be">—</div>
+      </div>
+      <div class="tile tile--fill">
+        <div class="tile-cap">Set by enrollment + levels + wait</div>
+        <div class="tile-label">Actual size — what you fill</div>
+        <div class="tile-num" id="o-cs">—</div>
+      </div>
     </div>
-    <input type="range" min="5" max="50" step="1" value="18" id="s-cf" style="width:100%;" />
-  </div>
 
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Course length (months)</label>
-      <span style="font-size:14px; font-weight:500;" id="v-cm">3</span>
+    <div id="gap" class="gap"></div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Monthly leads</div><div class="kpi-num" id="o-leads">—</div></div>
+      <div class="kpi"><div class="kpi-label">Enrolled / month</div><div class="kpi-num" id="o-enroll">—</div></div>
+      <div class="kpi"><div class="kpi-label">Active students</div><div class="kpi-num" id="o-active">—</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly profit</div><div class="kpi-num" id="o-profit">—</div></div>
     </div>
-    <input type="range" min="1" max="8" step="1" value="3" id="s-cm" style="width:100%;" />
-  </div>
 
-</div>
-
-<div class="lever-heading fill-levers-heading" style="font-size:12px; color:#0F6E56; font-weight:500; margin-bottom:8px; text-transform:none;">Levers that set actual fill (how many bodies you seat)</div>
-<div class="fill-levers" style="display:grid; grid-template-columns: 1fr 1fr; gap:18px 32px; margin-bottom:1.5rem; padding:14px 16px; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg);">
-
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Marketing spend / month</label>
-      <span style="font-size:14px; font-weight:500;" id="v-mkt">400M</span>
+    <div class="detail">
+      <table>
+        <tr><td>Contribution / student</td><td class="num" id="t-contrib">—</td></tr>
+        <tr><td>Margin per class</td><td class="num" id="t-mc">—</td></tr>
+        <tr><td>Effective conversion (after price effect)</td><td class="num" id="t-ec">—</td></tr>
+        <tr><td>CAC / enrolled student</td><td class="num" id="t-cac">—</td></tr>
+        <tr><td>LTV / CAC</td><td class="num" id="t-ratio">—</td></tr>
+      </table>
     </div>
-    <input type="range" min="0" max="2000" step="10" value="400" id="s-mkt" style="width:100%;" />
-  </div>
 
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Cost per lead (CPL)</label>
-      <span style="font-size:14px; font-weight:500;" id="v-cpl">720k</span>
-    </div>
-    <input type="range" min="20" max="2000" step="10" value="720" id="s-cpl" style="width:100%;" />
-  </div>
-
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Lead → enroll rate</label>
-      <span style="font-size:14px; font-weight:500;" id="v-conv">6%</span>
-    </div>
-    <input type="range" min="1" max="60" step="1" value="6" id="s-conv" style="width:100%;" />
-  </div>
-
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Number of levels</label>
-      <span style="font-size:14px; font-weight:500;" id="v-lvl">6</span>
-    </div>
-    <input type="range" min="2" max="30" step="1" value="6" id="s-lvl" style="width:100%;" />
-  </div>
-
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Max wait time</label>
-      <span style="font-size:14px; font-weight:500;" id="v-wait">4 wks</span>
-    </div>
-    <input type="range" min="1" max="36" step="1" value="4" id="s-wait" style="width:100%;" />
-  </div>
-
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-      <label style="font-size:14px; color:var(--color-text-secondary);">Fixed cost / month</label>
-      <span style="font-size:14px; font-weight:500;" id="v-fix">500M</span>
-    </div>
-    <input type="range" min="20" max="2000" step="10" value="500" id="s-fix" style="width:100%;" />
-  </div>
+  </section>
 
 </div>
 
-<div style="display:flex; align-items:center; gap:10px; margin-bottom:1.25rem; padding:10px 14px; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md);">
-  <input type="checkbox" id="elastic" checked style="width:auto;" />
-  <label for="elastic" style="font-size:13px; color:var(--color-text-secondary);">Tuition affects conversion (price elasticity) — the only indirect path from price to fill</label>
-</div>
-
-<div style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; margin-bottom:0;">
-  <table style="width:100%; font-size:13px; border-collapse:collapse;">
-    <tr><td style="padding:7px 0; color:var(--color-text-secondary);">Contribution / student</td><td style="text-align:right; font-weight:500;" id="t-contrib">—</td></tr>
-    <tr><td style="padding:7px 0; color:var(--color-text-secondary);">Margin per class</td><td style="text-align:right; font-weight:500;" id="t-mc">—</td></tr>
-    <tr><td style="padding:7px 0; color:var(--color-text-secondary);">Effective conversion (after price effect)</td><td style="text-align:right; font-weight:500;" id="t-ec">—</td></tr>
-    <tr><td style="padding:7px 0; color:var(--color-text-secondary);">CAC / enrolled student</td><td style="text-align:right; font-weight:500;" id="t-cac">—</td></tr>
-    <tr><td style="padding:7px 0; color:var(--color-text-secondary);">LTV / CAC</td><td style="text-align:right; font-weight:500;" id="t-ratio">—</td></tr>
-  </table>
-</div>
-
-</div><!-- /card -->
-
-<p class="footer-note">Amounts in VND millions unless labelled otherwise. Adjust the sliders to explore.</p>
+<p class="footer-note">Amounts in VND millions unless labelled otherwise. Drag the sliders to explore.</p>
 
 <script>
 (function(){
-  const ids = ['fee','vc','cf','cm','mkt','cpl','conv','lvl','wait','fix'];
+  const beIds   = ['fee','vc','cf','cm'];
+  const fillIds = ['mkt','cpl','conv','lvl','wait','fix'];
+  const ids = beIds.concat(fillIds);
   const el = {};
   ids.forEach(i => { el['s-'+i] = document.getElementById('s-'+i); el['v-'+i] = document.getElementById('v-'+i); });
   const out = id => document.getElementById(id);
   const elasticBox = document.getElementById('elastic');
 
+  const ACCENT_BE = '#38bdf8', ACCENT_FILL = '#34d399', TRACK = 'rgba(255,255,255,.10)';
   const fmtM = n => { if (Math.abs(n) >= 1000) return (n/1000).toFixed(2)+'B'; return Math.round(n)+'M'; };
   const fmtK = n => Math.round(n)+'k';
+
+  // Paint a glowing filled track up to the current value.
+  function paintTrack(i){
+    const s = el['s-'+i];
+    const pct = (s.value - s.min) / (s.max - s.min) * 100;
+    const accent = fillIds.includes(i) ? ACCENT_FILL : ACCENT_BE;
+    s.style.background = 'linear-gradient(90deg, '+accent+' 0 '+pct+'%, '+TRACK+' '+pct+'% 100%)';
+  }
 
   function compute(){
     const fee  = +el['s-fee'].value;
@@ -327,6 +168,8 @@
     const lvl  = +el['s-lvl'].value;
     const wait = +el['s-wait'].value;
     const fix  = +el['s-fix'].value;
+
+    ids.forEach(paintTrack);
 
     el['v-fee'].textContent  = fmtM(fee);
     el['v-vc'].textContent   = fmtM(vc);
@@ -379,15 +222,16 @@
 
     const g = out('gap');
     const surplus = classSize - breakEven;
+    g.classList.remove('gap--good','gap--bad');
     if (breakEven > 99){
       g.textContent = 'Variable cost exceeds tuition per month — no class size is profitable.';
-      g.style.background = 'var(--color-background-danger)'; g.style.color = 'var(--color-text-danger)';
+      g.classList.add('gap--bad');
     } else if (surplus >= 0){
       g.textContent = 'You fill '+classSize.toFixed(1)+' vs '+breakEven.toFixed(1)+' needed — '+surplus.toFixed(1)+' students of cushion above break-even.';
-      g.style.background = 'var(--color-background-success)'; g.style.color = 'var(--color-text-success)';
+      g.classList.add('gap--good');
     } else {
       g.textContent = 'You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+' students. Every class loses money.';
-      g.style.background = 'var(--color-background-danger)'; g.style.color = 'var(--color-text-danger)';
+      g.classList.add('gap--bad');
     }
 
     out('t-contrib').textContent = fmtM(contribPerStudent)+' / mo';
