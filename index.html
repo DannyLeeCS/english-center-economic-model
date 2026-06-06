@@ -91,8 +91,8 @@
       <div class="levers be">
 
         <div class="lever">
-          <div class="lever-top"><label for="s-ftsal">Full-time teacher salary / mo (total)</label><span class="lever-val" id="v-ftsal">40M</span></div>
-          <input type="range" min="0" max="1000" step="10" value="40" id="s-ftsal" />
+          <div class="lever-top"><label for="s-ftsal">Full-time teacher salary / mo (total)</label><span class="lever-val" id="v-ftsal">100M</span></div>
+          <input type="range" min="0" max="1000" step="10" value="100" id="s-ftsal" />
           <div class="hint"><strong>Fixed</strong> — independent of class count. Doesn't move break-even.</div>
         </div>
 
@@ -141,8 +141,8 @@
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-rooms">Rooms / simultaneous slots</label><span class="lever-val" id="v-rooms">12</span></div>
-          <input type="range" min="1" max="60" step="1" value="12" id="s-rooms" />
+          <div class="lever-top"><label for="s-rooms">Rooms / simultaneous slots</label><span class="lever-val" id="v-rooms">30</span></div>
+          <input type="range" min="1" max="80" step="1" value="30" id="s-rooms" />
           <div class="hint">How many classes can run at once. The binding constraint when demand is high.</div>
         </div>
 
@@ -254,6 +254,15 @@
       </div>
     </div>
 
+    <div class="view-toggle">
+      <span class="seg-label">Economics at</span>
+      <div class="segmented" id="seg-view">
+        <button type="button" data-view="now" class="on">Now (current)</button>
+        <button type="button" data-view="steady">Steady state</button>
+      </div>
+      <span class="hint" id="view-hint">Your current students drive the totals.</span>
+    </div>
+
     <div class="hero-tiles">
       <div class="tile tile--be">
         <div class="tile-cap">Set by tuition + cost</div>
@@ -274,10 +283,10 @@
     <div class="kpis kpis--6">
       <div class="kpi"><div class="kpi-label">Monthly leads</div><div class="kpi-num" id="o-leads">—</div></div>
       <div class="kpi"><div class="kpi-label">Seated enrollments / mo</div><div class="kpi-num" id="o-enroll">—</div></div>
-      <div class="kpi"><div class="kpi-label" title="Steady-state stock the inflow can sustain">Active students <span class="muted">(steady)</span></div><div class="kpi-num" id="o-active">—</div></div>
+      <div class="kpi"><div class="kpi-label">Active students <span class="muted" id="lbl-active">(now)</span></div><div class="kpi-num" id="o-active">—</div></div>
       <div class="kpi kpi--accent"><div class="kpi-label">Classes running</div><div class="kpi-num" id="o-classes">—</div></div>
       <div class="kpi"><div class="kpi-label">Part-time classes</div><div class="kpi-num" id="o-ptclasses">—</div></div>
-      <div class="kpi"><div class="kpi-label">Monthly profit <span class="muted">(steady)</span></div><div class="kpi-num" id="o-profit">—</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly profit <span class="muted" id="lbl-profit">(now)</span></div><div class="kpi-num" id="o-profit">—</div></div>
     </div>
 
     <div class="detail">
@@ -375,6 +384,7 @@
 
   let mode = 'cohort';
   let intakeMonths = 1;
+  let view = 'now';
 
   function paintTrack(id){
     const s = $('s-'+id);
@@ -449,21 +459,26 @@
     }
     const inflowDemand = leads*effConv*(1-abandon);
 
-    // -------- capacity ceiling --------
+    // -------- capacity ceiling & steady state (flows, view-independent) --------
     const maxStock = rooms*cap;
     const desiredStock = inflowDemand*avgLifetime;
-    const steadyStock = Math.min(desiredStock, maxStock);
-    const desiredStudentsPerLevel = desiredStock/lvl;
-    const desiredSections = Math.max(1, Math.ceil(desiredStudentsPerLevel/cap));
-    const desiredClasses = lvl*desiredSections;
-    const capacityConstrained = desiredClasses > rooms + 1e-9;
-    const roomsScarce = forceScarce || capacityConstrained;
+    const steadyStock = Math.min(desiredStock, maxStock);    // what marketing + retention sustain
+    const seatedInflow = steadyStock/avgLifetime;            // sustainable new students / mo
+    const currentStock = initAct;                            // what you actually have right now
 
-    // === SECTION A: total classes — single consistent value, capped by rooms ===
-    const classesRunning = Math.min(desiredClasses, rooms);
-    const classSize = classesRunning>0 ? steadyStock/classesRunning : 0;
-    const seatedInflow = steadyStock/avgLifetime;
-    const utilization = rooms>0 ? desiredClasses/rooms : 0;
+    // === which stock drives the headline economics? (the missing link) ===
+    // "Now" = your current students; "Steady" = the funnel's long-run level.
+    const viewStock = (view==='now') ? currentStock : steadyStock;
+    const servedStock = Math.min(viewStock, maxStock);       // can't seat beyond room capacity
+    const overflow = Math.max(0, viewStock - maxStock);
+
+    // === SECTION A: total classes — derived from the viewed stock, capped by rooms ===
+    const classesNeeded = lvl*Math.max(1, Math.ceil((viewStock/lvl)/cap));
+    const classesRunning = Math.min(classesNeeded, rooms);
+    const classSize = classesRunning>0 ? servedStock/classesRunning : 0;
+    const utilization = rooms>0 ? classesNeeded/rooms : 0;
+    const capacityConstrained = classesNeeded > rooms + 1e-9;
+    const roomsScarce = forceScarce || capacityConstrained;
 
     // === SECTION B: PT/FT split keys off class count ===
     const ptClasses = classesRunning*ptpct;
@@ -474,36 +489,35 @@
     const ptCostPerClass = hoursPerClassMonth*pthr/1000;       // pthr in k VND → M
     const ptCostTotal = ptClasses*ptCostPerClass;
 
-    // -------- per-class marginal cost & break-even --------
-    // marginal class is staffed by a part-timer (FT is fixed/sunk)
+    // -------- per-class marginal cost & break-even (unscaled) --------
     const marginalClassCost = ptCostPerClass + ro + (roomsScarce ? opp : 0);
     const breakEven = contribPerStudent>0 ? marginalClassCost/contribPerStudent : 999;
 
-    // -------- totals from the stock --------
-    const revenue = steadyStock*feePerMonth;
-    const varCostTotal = steadyStock*vcPerMonth;
+    // -------- totals from the (served) stock — current + new combined --------
+    const revenue = servedStock*feePerMonth;
+    const varCostTotal = servedStock*vcPerMonth;
     const roomCostTotal = ro*classesRunning;
-    const perClassBucket = ptCostTotal + roomCostTotal;         // PT teacher + room (no FT here)
-    const fixedTotal = fix + ftsal;                             // overhead + FT salary
+    const perClassBucket = ptCostTotal + roomCostTotal;
+    const fixedTotal = fix + ftsal;
     const profit = revenue - varCostTotal - perClassBucket - fixedTotal;
 
-    const upsellStock = Math.min(steadyStock, seatedInflow*upPct*upCourses*cm);
+    // upsell scales with the whole active base (current + new), via its share of lifetime
+    const upsellShare = avgLifetime>0 ? (upPct*upCourses*cm)/avgLifetime : 0;
+    const upsellStock = servedStock*upsellShare;
     const upsellRev = upsellStock*feePerMonth;
 
-    // -------- lifetime value --------
+    // -------- lifetime value (flows, view-independent) --------
     const cac = seatedInflow>0 ? mkt/seatedInflow : 0;
     const ltv = avgCourses*(fee - vc);
     const ratio = cac>0 ? ltv/cac : 0;
 
     const marginPerClass = classSize*contribPerStudent - marginalClassCost;
 
-    // -------- deferred revenue --------
-    // cash is collected upfront at each course-start (not just for new heads —
-    // returning students starting their next course pay too), so course-starts/mo = stock/cm.
-    const courseStartsPerMonth = cm>0 ? steadyStock/cm : 0;
+    // -------- deferred revenue (on the served stock) --------
+    const courseStartsPerMonth = cm>0 ? servedStock/cm : 0;
     const cashIn = courseStartsPerMonth*fee;
     const recognized = revenue;
-    const unearned = steadyStock*feePerMonth*Math.max(0,(cm-1))/2;
+    const unearned = servedStock*feePerMonth*Math.max(0,(cm-1))/2;
 
     // === SECTION D: FT capacity sanity check (validate, never override) ===
     const impliedFT = ftper>0 ? ftsal/ftper : 0;
@@ -526,10 +540,12 @@
     setText('o-cs', classSize.toFixed(1));
     setText('o-leads', Math.round(leads));
     setText('o-enroll', Math.round(seatedInflow));
-    setText('o-active', Math.round(steadyStock));
+    setText('o-active', Math.round(servedStock));
     setText('o-classes', classesRunning.toFixed(1));
     setText('o-ptclasses', ptClasses.toFixed(1));
     setText('o-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
+    const viewLbl = view==='now' ? '(now)' : '(steady)';
+    setText('lbl-active', viewLbl); setText('lbl-profit', viewLbl);
 
     const gEl=$('gap'); gEl.classList.remove('gap--good','gap--bad');
     const surplus = classSize - breakEven;
@@ -538,7 +554,7 @@
     else { gEl.textContent='You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+'. Every class loses money.'; gEl.classList.add('gap--bad'); }
 
     const b=$('cap-badge'); b.classList.remove('badge--cap','badge--demand','badge--ok');
-    if (capacityConstrained){ b.textContent='Capacity-constrained — need '+desiredClasses.toFixed(0)+' classes but only '+rooms+' rooms ('+utilization.toFixed(1)+'×). Extra marketing only inflates leads & CAC; no new seats.'; b.classList.add('badge--cap'); }
+    if (capacityConstrained){ b.textContent='Capacity-constrained — '+Math.round(overflow)+' students can’t be seated; need '+classesNeeded.toFixed(0)+' classes but only '+rooms+' rooms ('+utilization.toFixed(1)+'×). Add rooms or they go unserved.'; b.classList.add('badge--cap'); }
     else if (classSize < cap-0.05){ b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap; fill seats before adding rooms. '+Math.round(utilization*100)+'% of rooms in use.'; b.classList.add('badge--demand'); }
     else { b.textContent='Tight — classes near the cap and rooms nearly full ('+Math.round(utilization*100)+'% of rooms in use).'; b.classList.add('badge--ok'); }
 
@@ -592,10 +608,10 @@
   }
 
   // ---------- persistence ----------
-  const STORAGE_KEY = 'ecm.state.v3';
+  const STORAGE_KEY = 'ecm.state.v4';
   function saveState(){
     try{
-      const s = { mode, intakeMonths, elastic:$('elastic').checked, scarce:$('scarce').checked, deferred:$('deferred').checked };
+      const s = { mode, intakeMonths, view, elastic:$('elastic').checked, scarce:$('scarce').checked, deferred:$('deferred').checked };
       sliderIds.forEach(id => s['s-'+id] = $('s-'+id).value);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
     }catch(e){}
@@ -609,6 +625,15 @@
     if (typeof s.deferred==='boolean'){ $('deferred').checked = s.deferred; $('deferred-panel').hidden = !s.deferred; }
     if (s.mode) applyMode(s.mode);
     if (s.intakeMonths) applyIntake(s.intakeMonths);
+    if (s.view) applyView(s.view);
+  }
+
+  function applyView(v){
+    view = v;
+    [...$('seg-view').children].forEach(c => c.classList.toggle('on', c.dataset.view===v));
+    $('view-hint').textContent = v==='now'
+      ? 'Your current students drive the totals.'
+      : 'The long-run level current marketing & retention sustain.';
   }
 
   function applyMode(m){
@@ -629,6 +654,7 @@
   sliderIds.forEach(id => $('s-'+id).addEventListener('input', compute));
   $('elastic').addEventListener('change', compute);
   $('scarce').addEventListener('change', compute);
+  $('seg-view').addEventListener('click', e => { const btn=e.target.closest('button'); if(!btn) return; applyView(btn.dataset.view); compute(); });
   $('seg-mode').addEventListener('click', e => { const btn=e.target.closest('button'); if(!btn) return; applyMode(btn.dataset.mode); compute(); });
   $('seg-intake').addEventListener('click', e => { const btn=e.target.closest('button'); if(!btn) return; if($('intake-block').classList.contains('disabled')) return; applyIntake(btn.dataset.intake); compute(); });
   $('deferred').addEventListener('change', e => { $('deferred-panel').hidden = !e.target.checked; saveState(); });
