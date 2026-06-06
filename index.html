@@ -284,9 +284,11 @@
       <div class="detail-title">Monthly P&amp;L <span class="muted">— from the active stock</span></div>
       <table>
         <tr><td>Revenue <span class="muted" id="p-rev-note"></span></td><td class="num" id="p-rev">—</td></tr>
-        <tr><td>− Per-student (variable)</td><td class="num neg" id="p-var">—</td></tr>
-        <tr><td>− Per-class (PT teacher + room OOP)</td><td class="num neg" id="p-class">—</td></tr>
-        <tr><td>− Center fixed (overhead + FT salary)</td><td class="num neg" id="p-fix">—</td></tr>
+        <tr><td class="cost"><span class="dot-var"></span> Variable / student</td><td class="num neg" id="p-var">—</td></tr>
+        <tr><td class="cost"><span class="dot-pt"></span> Part-time teachers</td><td class="num neg" id="p-pt">—</td></tr>
+        <tr><td class="cost"><span class="dot-room"></span> Room out-of-pocket</td><td class="num neg" id="p-room">—</td></tr>
+        <tr><td class="cost"><span class="dot-ft"></span> Full-time salary</td><td class="num neg" id="p-ft">—</td></tr>
+        <tr><td class="cost"><span class="dot-oh"></span> Non-teacher overhead</td><td class="num neg" id="p-oh">—</td></tr>
         <tr class="total"><td>= Monthly profit</td><td class="num" id="p-profit">—</td></tr>
       </table>
     </div>
@@ -339,11 +341,11 @@
     <div class="detail" id="deferred-panel" hidden>
       <div class="detail-title">Cash vs. realized <span class="muted">— tuition collected upfront, earned per month</span></div>
       <table>
-        <tr><td>Cash collected / mo (upfront)</td><td class="num" id="d-cash">—</td></tr>
+        <tr><td>Cash collected / mo (course-starts × fee)</td><td class="num" id="d-cash">—</td></tr>
         <tr><td>Recognized revenue / mo (earned)</td><td class="num" id="d-real">—</td></tr>
-        <tr><td>Unearned tuition on the books (est.)</td><td class="num" id="d-unearned">—</td></tr>
+        <tr><td>Unearned tuition held (est. balance)</td><td class="num" id="d-unearned">—</td></tr>
       </table>
-      <p class="hint">The unearned balance is cash you hold but owe as future teaching — not freely spendable.</p>
+      <p class="hint">At a steady stock, monthly cash in ≈ recognized revenue (money conserved). The gap you carry is the <strong>unearned balance</strong> — cash held but owed as future teaching, not freely spendable.</p>
     </div>
 
   </section>
@@ -496,7 +498,10 @@
     const marginPerClass = classSize*contribPerStudent - marginalClassCost;
 
     // -------- deferred revenue --------
-    const cashIn = seatedInflow*fee;
+    // cash is collected upfront at each course-start (not just for new heads —
+    // returning students starting their next course pay too), so course-starts/mo = stock/cm.
+    const courseStartsPerMonth = cm>0 ? steadyStock/cm : 0;
+    const cashIn = courseStartsPerMonth*fee;
     const recognized = revenue;
     const unearned = steadyStock*feePerMonth*Math.max(0,(cm-1))/2;
 
@@ -533,9 +538,9 @@
     else { gEl.textContent='You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+'. Every class loses money.'; gEl.classList.add('gap--bad'); }
 
     const b=$('cap-badge'); b.classList.remove('badge--cap','badge--demand','badge--ok');
-    if (capacityConstrained){ b.textContent='Capacity-constrained — rooms full ('+utilization.toFixed(1)+'×). Extra marketing only inflates leads & CAC; no new seats.'; b.classList.add('badge--cap'); }
-    else if (classSize < cap-0.05){ b.textContent='Demand-constrained — empty seats, rooms to spare ('+Math.round(utilization*100)+'% used). Marketing & conversion add students.'; b.classList.add('badge--demand'); }
-    else { b.textContent='Tight — classes near the cap and rooms nearly full ('+Math.round(utilization*100)+'% used).'; b.classList.add('badge--ok'); }
+    if (capacityConstrained){ b.textContent='Capacity-constrained — need '+desiredClasses.toFixed(0)+' classes but only '+rooms+' rooms ('+utilization.toFixed(1)+'×). Extra marketing only inflates leads & CAC; no new seats.'; b.classList.add('badge--cap'); }
+    else if (classSize < cap-0.05){ b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap; fill seats before adding rooms. '+Math.round(utilization*100)+'% of rooms in use.'; b.classList.add('badge--demand'); }
+    else { b.textContent='Tight — classes near the cap and rooms nearly full ('+Math.round(utilization*100)+'% of rooms in use).'; b.classList.add('badge--ok'); }
 
     // FT sanity-check badge
     const fb=$('ft-badge'); fb.classList.remove('badge--cap','badge--warn','badge--ok');
@@ -553,8 +558,10 @@
     setText('p-rev', fmtM(revenue));
     setText('p-rev-note', upsellRev>0 ? '(incl. '+fmtM(upsellRev)+' upsell)' : '');
     setText('p-var', '−'+fmtM(varCostTotal));
-    setText('p-class', '−'+fmtM(perClassBucket));
-    setText('p-fix', '−'+fmtM(fixedTotal));
+    setText('p-pt', '−'+fmtM(ptCostTotal));
+    setText('p-room', '−'+fmtM(roomCostTotal));
+    setText('p-ft', '−'+fmtM(ftsal));
+    setText('p-oh', '−'+fmtM(fix));
     setText('p-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
 
     setText('ts-split', ptClasses.toFixed(1)+' / '+ftClasses.toFixed(1)+' of '+classesRunning.toFixed(1));
