@@ -4,7 +4,7 @@
     fee:CY, vc:CY, ro:CY, cm:CY, fix:CY,
     courses:AM, uppct:AM, upcourses:AM,
     ftsal:CY, ptpct:CY, pthr:CY, pthrs:CY, ftper:CY, ftcov:CY,
-    cap:VI, avgcls:VI, rooms:VI, opp:VI,
+    cap:VI, avgcls:VI, rooms:VI, sess:VI, evesl:VI, evedays:VI, wkndsl:VI, wknddays:VI, mainpct:VI, wkndpct:VI, opp:VI,
     mkt:EM, cpl:EM, conv:EM, lvl:EM, wait:EM, initact:EM
   };
   const sliderIds = Object.keys(ACCENT);
@@ -59,6 +59,8 @@
     const ftsal=num('ftsal'), ptpct=num('ptpct')/100, pthr=num('pthr'), pthrs=num('pthrs');
     const ftper=num('ftper'), ftcov=num('ftcov');
     const cap=num('cap'), avgcls=num('avgcls'), rooms=num('rooms'), opp=num('opp');
+    const sess=num('sess'), evesl=num('evesl'), evedays=num('evedays'), wkndsl=num('wkndsl'), wknddays=num('wknddays');
+    const mainpct=num('mainpct')/100, wkndpct=num('wkndpct')/100;
     const mkt=num('mkt'), cpl=num('cpl'), conv=num('conv'), lvl=num('lvl'), wait=num('wait');
     const initAct=num('initact'), fix=num('fix');
     const useElastic=$('elastic').checked, forceScarce=$('scarce').checked;
@@ -69,6 +71,8 @@
     setText('v-ftsal',fmtM(ftsal)); setText('v-ptpct',Math.round(ptpct*100)+'%'); setText('v-pthr',fmtK(pthr));
     setText('v-pthrs',pthrs); setText('v-ftper',fmtM(ftper)); setText('v-ftcov',ftcov);
     setText('v-cap',cap); setText('v-avgcls',avgcls); setText('v-rooms',rooms); setText('v-opp',fmtM(opp));
+    setText('v-sess',sess); setText('v-evesl',evesl); setText('v-evedays',evedays); setText('v-wkndsl',wkndsl); setText('v-wknddays',wknddays);
+    setText('v-mainpct',Math.round(mainpct*100)+'%'); setText('v-wkndpct',Math.round(wkndpct*100)+'%');
     setText('v-mkt',fmtM(mkt)); setText('v-cpl',fmtK(cpl)); setText('v-conv',conv+'%');
     setText('v-lvl',lvl); setText('v-wait',wait+(wait===1?' wk':' wks')); setText('v-initact',Math.round(initAct));
     setText('v-fix',fmtM(fix));
@@ -93,28 +97,49 @@
     }
     const inflowDemand = leads*effConv*(1-abandon);
 
-    // -------- capacity ceiling & steady state (flows, view-independent) --------
-    const maxStock = rooms*cap;
+    // -------- TWO-WINDOW, SESSION-AWARE CAPACITY --------
+    // Capacity is hours in usable windows, not rooms. A class consumes `sess` slot-instances/week.
+    const effAvg = Math.min(Math.max(avgcls, 0.5), cap);     // real avg fill, never above the physical cap
+    const sessW = Math.max(0.5, sess);                       // sessions/class/week (the divisor)
+
+    const mainSupply = rooms * evesl * evedays;              // weekday-evening slot-instances / week
+    const wkndSupply = rooms * wkndsl * wknddays;            // weekend-morning slot-instances / week
+    const mainCapClasses = sessW>0 ? mainSupply/sessW : 0;   // each window's ceiling, in classes
+    const wkndCapClasses = sessW>0 ? wkndSupply/sessW : 0;
+
+    // most total classes the load split allows before the binding window saturates
+    // a window only constrains if it has both load and supply (graceful if one is switched off)
+    const maxByMain = (mainpct>0 && mainSupply>0) ? mainCapClasses/mainpct : Infinity;
+    const maxByWknd = (wkndpct>0 && wkndSupply>0) ? wkndCapClasses/wkndpct : Infinity;
+    const maxClasses = Math.min(maxByMain, maxByWknd);       // may be Infinity if both windows unused
+    const maxStock = (isFinite(maxClasses) ? maxClasses : 1e9) * effAvg;
+
     const desiredStock = inflowDemand*avgLifetime;
     const steadyStock = Math.min(desiredStock, maxStock);    // what marketing + retention sustain
     const seatedInflow = steadyStock/avgLifetime;            // sustainable new students / mo
     const currentStock = initAct;                            // what you actually have right now
 
     // === which stock drives the headline economics? ===
-    // "Now" = your current students (a fixed snapshot of this month).
-    // "Steady" = the funnel's long-run level (responds to every lever).
     const viewStock = (view==='now') ? currentStock : steadyStock;
-    const servedStock = Math.min(viewStock, maxStock);       // can't seat beyond room capacity
+    const servedStock = Math.min(viewStock, maxStock);       // can't seat beyond window capacity
     const overflow = Math.max(0, viewStock - maxStock);
 
-    // === SECTION A: total classes — from actual average class fill, floored at one per level ===
-    const effAvg = Math.min(Math.max(avgcls, 0.5), cap);          // real avg fill, never above the physical cap
+    // === SECTION A: total classes — from actual average fill, floored per level, capped by windows ===
     const classesNeeded = Math.max(lvl, Math.ceil(viewStock / effAvg));
-    const classesRunning = Math.min(classesNeeded, rooms);
+    const classesRunning = Math.min(classesNeeded, isFinite(maxClasses) ? maxClasses : classesNeeded);
     const classSize = classesRunning>0 ? servedStock/classesRunning : 0;
-    const utilization = rooms>0 ? classesNeeded/rooms : 0;
-    const capacityConstrained = classesNeeded > rooms + 1e-9;
-    const roomsScarce = forceScarce || capacityConstrained;
+
+    // === per-window load & utilization (load = classes × sessions/week) ===
+    const offpeakPct  = Math.max(0, 1 - mainpct - wkndpct);
+    const mainClasses = classesRunning*mainpct;
+    const wkndClasses = classesRunning*wkndpct;
+    const offpeakClasses = classesRunning*offpeakPct;
+    const mainUtil = mainSupply>0 ? (mainClasses*sessW)/mainSupply : 0;
+    const wkndUtil = wkndSupply>0 ? (wkndClasses*sessW)/wkndSupply : 0;
+    const blendedUtil = (mainSupply+wkndSupply)>0 ? ((mainClasses+wkndClasses)*sessW)/(mainSupply+wkndSupply) : 0;
+    const bindingUtil = Math.max(mainUtil, wkndUtil);
+    const capacityConstrained = classesNeeded > maxClasses + 1e-9;
+    const roomsScarce = forceScarce || bindingUtil >= 0.95;  // opp cost auto-engages per saturating window
 
     // === SECTION B: PT/FT split keys off class count ===
     const ptClasses = classesRunning*ptpct;
@@ -190,9 +215,22 @@
     else { gEl.textContent='You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+'. Every class loses money.'; gEl.classList.add('gap--bad'); }
 
     const b=$('cap-badge'); b.classList.remove('badge--cap','badge--demand','badge--ok');
-    if (capacityConstrained){ b.textContent='Capacity-constrained — '+Math.round(overflow)+' students can’t be seated; need '+classesNeeded.toFixed(0)+' classes but only '+rooms+' weekly slots ('+utilization.toFixed(1)+'×). Add slots or they go unserved.'; b.classList.add('badge--cap'); }
-    else if (classSize < cap-0.05){ b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap; fill seats before adding slots. '+Math.round(utilization*100)+'% of slots in use.'; b.classList.add('badge--demand'); }
-    else { b.textContent='Tight — classes near the cap and slots nearly full ('+Math.round(utilization*100)+'% of slots in use).'; b.classList.add('badge--ok'); }
+    const bindName  = mainUtil>=wkndUtil ? 'weekday evenings' : 'weekend mornings';
+    const otherName = mainUtil>=wkndUtil ? 'weekend mornings' : 'weekday evenings';
+    const bindPct = Math.round(bindingUtil*100);
+    if (capacityConstrained || bindingUtil >= 0.999){
+      b.textContent='Capacity-constrained — '+bindName+' are '+bindPct+'% full. Adding rooms barely helps; shift classes to '+otherName+', add slots in that window, or run fewer sessions/week.';
+      b.classList.add('badge--cap');
+    } else if (bindingUtil >= 0.85){
+      b.textContent='Getting tight — '+bindName+' at '+bindPct+'% full. Push new demand to '+otherName+' or add slots in that window before it saturates.';
+      b.classList.add('badge--cap');
+    } else if (classSize < cap-0.05){
+      b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap, and both windows have headroom (evenings '+Math.round(mainUtil*100)+'%, weekends '+Math.round(wkndUtil*100)+'%). Growth comes from more students, not more rooms.';
+      b.classList.add('badge--demand');
+    } else {
+      b.textContent='Balanced — classes near the cap; windows at evenings '+Math.round(mainUtil*100)+'%, weekends '+Math.round(wkndUtil*100)+'%.';
+      b.classList.add('badge--ok');
+    }
 
     // FT sanity-check badge — spoken in teachers, with correct guidance
     const fb=$('ft-badge'); fb.classList.remove('badge--cap','badge--warn','badge--ok');
@@ -243,7 +281,26 @@
     setText('t-ec', (effConv*100).toFixed(1)+'%');
 
     setText('t-uprev', fmtM(upsellRev));
-    setText('t-util', Math.round(utilization*100)+'%', capacityConstrained ? 'var(--color-text-danger)' : 'var(--text)');
+
+    // per-window capacity display
+    setText('w-main', Math.round(mainUtil*100)+'% full', mainUtil>=0.85 ? 'var(--color-text-danger)' : 'var(--text)');
+    setText('w-main-sub', '· '+mainClasses.toFixed(0)+' / '+mainCapClasses.toFixed(0)+' classes');
+    setText('w-wknd', Math.round(wkndUtil*100)+'% full', wkndUtil>=0.85 ? 'var(--color-text-danger)' : 'var(--text)');
+    setText('w-wknd-sub', '· '+wkndClasses.toFixed(0)+' / '+wkndCapClasses.toFixed(0)+' classes');
+    setText('w-blend', Math.round(blendedUtil*100)+'%');
+    let wnote;
+    const noSupplyLoad = (mainpct>0 && mainSupply<=0) || (wkndpct>0 && wkndSupply<=0);
+    if (mainpct+wkndpct > 1.0001){
+      wnote = 'Load split exceeds 100% — trim the window percentages so they sum to ≤100%.';
+    } else if (noSupplyLoad){
+      wnote = 'Classes are assigned to a window that has no slots — set its slots/days, or move that load to the other window.';
+    } else if (offpeakPct > 0.001){
+      wnote = Math.round(offpeakPct*100)+'% of classes ('+offpeakClasses.toFixed(0)+') fall outside both prime windows — those off-peak slots are the hardest to fill.';
+    } else {
+      const tight = mainUtil>=wkndUtil ? 'Weekday evenings' : 'Weekend mornings';
+      wnote = tight+' are the tighter window. Headroom: evenings '+Math.max(0,Math.round((1-mainUtil)*100))+'%, weekends '+Math.max(0,Math.round((1-wkndUtil)*100))+'%.';
+    }
+    setText('w-note', wnote);
 
     setText('d-cash', fmtM(cashIn));
     setText('d-real', fmtM(recognized));

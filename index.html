@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=10" />
+<link rel="stylesheet" href="styles.css?v=11" />
 </head>
 <body>
 <main class="page">
@@ -135,9 +135,10 @@
       </div>
     </div>
 
-    <!-- ---- Rooms & capacity ---- -->
+    <!-- ---- Rooms & capacity (two-window, session-aware) ---- -->
     <div class="lever-group">
-      <div class="lever-heading lever-heading--cap">Rooms &amp; capacity <span class="drives drives--cap">the ceiling</span></div>
+      <div class="lever-heading lever-heading--cap">Rooms &amp; capacity <span class="drives drives--cap">window-hours are the real ceiling</span></div>
+      <p class="group-note">Capacity isn't rooms — it's how many class-<em>sessions</em> fit your usable time windows. Students attend two: <strong>weekday evenings</strong> and <strong>weekend mornings</strong>. Each window is sized and loaded separately, because a near-full evening can hide behind a half-empty weekend.</p>
       <div class="levers cap">
 
         <div class="lever">
@@ -149,24 +150,66 @@
         <div class="lever">
           <div class="lever-top"><label for="s-avgcls">Average students per class (actual)</label><span class="lever-val" id="v-avgcls">12</span></div>
           <input type="range" min="1" max="40" step="0.5" value="12" id="s-avgcls" />
-          <div class="hint">Your real average fill — well below the cap if you run 1-on-1s, split levels by schedule, or have partial classes. <strong>Class count = students ÷ this.</strong> e.g. 329 ÷ 4 ≈ 83 classes.</div>
+          <div class="hint">Your real average fill — well below the cap if you run 1-on-1s, split levels by schedule, or have partial classes. <strong>Class count = students ÷ this.</strong></div>
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-rooms">Class slots / week (schedule capacity)</label><span class="lever-val" id="v-rooms">40</span></div>
-          <input type="range" min="1" max="200" step="1" value="40" id="s-rooms" />
-          <div class="hint">Max distinct classes your timetable can run = rooms × weekly time-slots per room. A room open ~60h/wk hosts ~10 classes/wk, so 8 rooms ≈ 80 slots. The binding constraint when demand is high.</div>
+          <div class="lever-top"><label for="s-rooms">Number of rooms</label><span class="lever-val" id="v-rooms">67</span></div>
+          <input type="range" min="1" max="200" step="1" value="67" id="s-rooms" />
+          <div class="hint">Physical rooms available. Note: more rooms barely helps once a <em>time window</em> saturates — the squeeze is hours, not rooms.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-sess">Sessions per class / week</label><span class="lever-val" id="v-sess">3.5</span></div>
+          <input type="range" min="1" max="7" step="0.5" value="3.5" id="s-sess" />
+          <div class="hint">How many times one class meets per week — the multiplier that turns classes into slot-instances. Fewer sessions/week (intensive formats) frees window capacity.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-evesl">Evening slots / room / night</label><span class="lever-val" id="v-evesl">2</span></div>
+          <input type="range" min="1" max="8" step="1" value="2" id="s-evesl" />
+          <div class="hint">Class start-times in a weekday evening students will actually attend.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-evedays">Weekday evenings / week</label><span class="lever-val" id="v-evedays">5</span></div>
+          <input type="range" min="0" max="7" step="1" value="5" id="s-evedays" />
+          <div class="hint">Nights the evening window runs (Mon–Fri = 5).</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-wkndsl">Weekend-morning slots / room / morning</label><span class="lever-val" id="v-wkndsl">3</span></div>
+          <input type="range" min="0" max="8" step="1" value="3" id="s-wkndsl" />
+          <div class="hint">Start-times in a weekend morning (often more than an evening).</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-wknddays">Weekend mornings / week</label><span class="lever-val" id="v-wknddays">2</span></div>
+          <input type="range" min="0" max="3" step="1" value="2" id="s-wknddays" />
+          <div class="hint">Mornings the weekend window runs (Sat + Sun = 2).</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-mainpct">% of classes in weekday evenings</label><span class="lever-val" id="v-mainpct">75%</span></div>
+          <input type="range" min="0" max="100" step="5" value="75" id="s-mainpct" />
+          <div class="hint">Share of classes scheduled into the mainstream evening window.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-wkndpct">% of classes in weekend mornings</label><span class="lever-val" id="v-wkndpct">25%</span></div>
+          <input type="range" min="0" max="100" step="5" value="25" id="s-wkndpct" />
+          <div class="hint">Share in the weekend window. Any remainder runs in off-peak times — surfaced as hard-to-fill.</div>
         </div>
 
         <label class="toggle">
           <input type="checkbox" id="scarce" />
-          <span>Force <strong>rooms scarce</strong> — load opportunity cost even before slots are full</span>
+          <span>Force <strong>rooms scarce</strong> — load opportunity cost even before a window is full</span>
         </label>
 
         <div class="lever" id="opp-wrap">
           <div class="lever-top"><label for="s-opp">Opportunity cost / class when scarce</label><span class="lever-val" id="v-opp">8M</span></div>
           <input type="range" min="0" max="40" step="0.5" value="8" id="s-opp" />
-          <div class="hint">When rooms are full, using one forgoes the next-best class's margin. Zero when spare; auto-loads when slots are full.</div>
+          <div class="hint">When a window is full, using a slot forgoes the next-best class's margin. Zero when both windows have headroom; auto-loads when a window nears 100%.</div>
         </div>
 
       </div>
@@ -348,10 +391,19 @@
     </div>
 
     <div class="detail">
-      <div class="detail-title">Stock &amp; capacity</div>
+      <div class="detail-title">Capacity by window <span class="muted">— the ceiling is window-hours, not rooms</span></div>
+      <table>
+        <tr><td>Weekday evenings <span class="muted" id="w-main-sub"></span></td><td class="num" id="w-main">—</td></tr>
+        <tr><td>Weekend mornings <span class="muted" id="w-wknd-sub"></span></td><td class="num" id="w-wknd">—</td></tr>
+        <tr><td>Blended <span class="muted">(reference only)</span></td><td class="num" id="w-blend">—</td></tr>
+      </table>
+      <p class="hint" id="w-note"></p>
+    </div>
+
+    <div class="detail">
+      <div class="detail-title">Stock</div>
       <table>
         <tr><td>Upsell revenue / mo <span class="muted">(zero CAC)</span></td><td class="num" id="t-uprev">—</td></tr>
-        <tr><td>Slot utilization</td><td class="num" id="t-util">—</td></tr>
       </table>
     </div>
 
@@ -375,7 +427,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=10" defer></script>
+<script src="app.js?v=11" defer></script>
 </main>
 </body>
 </html>
