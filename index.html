@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=12" />
+<link rel="stylesheet" href="styles.css?v=13" />
 </head>
 <body>
 <main class="page">
@@ -85,6 +85,27 @@
           <div class="lever-top"><label for="s-upcourses">Upsell courses / upsold student</label><span class="lever-val" id="v-upcourses">1</span></div>
           <input type="range" min="0" max="4" step="0.5" value="1" id="s-upcourses" />
           <div class="hint">Extra cross-sell courses on top of the level journey. Distinct from progression above — don't double-count. They extend active duration.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ---- Outcome guarantee (free retakes) ---- -->
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--life">Outcome guarantee — free retakes <span class="drives drives--life">zero-revenue bodies</span></div>
+      <p class="group-note">Students who fail re-study free. They pay nothing but still occupy seats and extend their stay — a real cost the model now carries. Whether it bites depends on how full your classes are.</p>
+      <div class="levers life">
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-failrate">Student fail rate</label><span class="lever-val" id="v-failrate">15%</span></div>
+          <input type="range" min="0" max="40" step="1" value="15" id="s-failrate" />
+          <div class="hint">Share of students who don't hit their target and re-study free under the guarantee. Drives how many zero-revenue retake bodies enter the system.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-retakecourses">Courses allowed to retake</label><span class="lever-val" id="v-retakecourses">1</span></div>
+          <input type="range" min="1" max="3" step="1" value="1" id="s-retakecourses" />
+          <div class="hint">How many courses a failed student may re-study free. More retakes = each failed student stays active longer at zero revenue.</div>
         </div>
 
       </div>
@@ -374,6 +395,19 @@
     </div>
 
     <div class="detail">
+      <div class="detail-title">Outcome guarantee (free retakes) <span class="muted">— cost depends on how full classes are</span></div>
+      <table>
+        <tr><td>Retake students <span class="muted">(zero revenue)</span></td><td class="num" id="g-students">—</td></tr>
+        <tr><td class="cost"><span class="dot-var"></span> Retake variable cost</td><td class="num neg" id="g-var">—</td></tr>
+        <tr><td class="cost"><span class="dot-pt"></span> Retake capacity cost <span class="muted">(extra classes/teachers)</span></td><td class="num neg" id="g-cap">—</td></tr>
+        <tr><td class="cost"><span class="dot-room"></span> Retake seat opportunity cost</td><td class="num neg" id="g-opp">—</td></tr>
+        <tr class="total"><td>= Total guarantee cost / mo</td><td class="num" id="g-total">—</td></tr>
+        <tr><td>Revenue / active student <span class="muted">(diluted by retakes)</span></td><td class="num" id="g-rev">—</td></tr>
+      </table>
+      <p class="hint" id="g-note"></p>
+    </div>
+
+    <div class="detail">
       <div class="detail-title">Teacher split <span class="muted">— scales with class count</span></div>
       <table>
         <tr><td>Part-time / full-time classes</td><td class="num" id="ts-split">—</td></tr>
@@ -443,7 +477,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=12" defer></script>
+<script src="app.js?v=13" defer></script>
 </main>
 </body>
 </html>

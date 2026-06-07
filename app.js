@@ -2,7 +2,7 @@
   const CY='#38bdf8', EM='#34d399', VI='#a78bfa', AM='#fbbf24', TRACK='rgba(255,255,255,.10)';
   const ACCENT = {
     fee:CY, vc:CY, ro:CY, cm:CY, fix:CY,
-    courses:AM, uppct:AM, upcourses:AM,
+    courses:AM, uppct:AM, upcourses:AM, failrate:AM, retakecourses:AM,
     ftsal:CY, ptpct:CY, pthr:CY, pthrs:CY, ftper:CY, ftcov:CY,
     cap:VI, avgcls:VI, rooms:VI, sess:VI, evesl:VI, evedays:VI, wkndsl:VI, wknddays:VI, mainpct:VI, wkndpct:VI, offpeakfill:VI, opp:VI,
     mkt:EM, cpl:EM, conv:EM, lvl:EM, wait:EM, initact:EM
@@ -56,6 +56,7 @@
 
     const fee=num('fee'), vc=num('vc'), ro=num('ro'), cm=num('cm');
     const courses=num('courses'), upPct=num('uppct')/100, upCourses=num('upcourses');
+    const failRate=num('failrate')/100, retakeCourses=num('retakecourses');
     const ftsal=num('ftsal'), ptpct=num('ptpct')/100, pthr=num('pthr'), pthrs=num('pthrs');
     const ftper=num('ftper'), ftcov=num('ftcov');
     const cap=num('cap'), avgcls=num('avgcls'), rooms=num('rooms'), opp=num('opp');
@@ -68,6 +69,7 @@
     // value labels
     setText('v-fee',fmtM(fee)); setText('v-vc',fmtM(vc)); setText('v-ro',fmtM(ro)); setText('v-cm',cm);
     setText('v-courses',courses); setText('v-uppct',Math.round(upPct*100)+'%'); setText('v-upcourses',upCourses);
+    setText('v-failrate',Math.round(failRate*100)+'%'); setText('v-retakecourses',retakeCourses);
     setText('v-ftsal',fmtM(ftsal)); setText('v-ptpct',Math.round(ptpct*100)+'%'); setText('v-pthr',fmtK(pthr));
     setText('v-pthrs',pthrs); setText('v-ftper',fmtM(ftper)); setText('v-ftcov',ftcov);
     setText('v-cap',cap); setText('v-avgcls',avgcls); setText('v-rooms',rooms); setText('v-opp',fmtM(opp));
@@ -120,14 +122,20 @@
     const maxClasses = Math.min(maxByMain, maxByWknd);       // may be Infinity if both windows unused
     const maxStock = (isFinite(maxClasses) ? maxClasses : 1e9) * effFill;
 
-    const desiredStock = inflowDemand*avgLifetime;
-    const steadyStock = Math.min(desiredStock, maxStock);    // what marketing + retention sustain
-    const seatedInflow = steadyStock/avgLifetime;            // sustainable new students / mo
-    const currentStock = initAct;                            // what you actually have right now
+    // outcome guarantee: failed students re-study free → extra zero-revenue bodies in the stock
+    const retakeMult = failRate*retakeCourses;               // retake bodies per paying body
+    const totalInflow = inflowDemand*(1+retakeMult);         // paying + retake bodies entering / mo
+
+    const desiredStock = totalInflow*avgLifetime;            // total bodies (paying + retake) demanded
+    const steadyStock = Math.min(desiredStock, maxStock);    // total bodies marketing + retention sustain
+    const seatedInflow = (steadyStock/(1+retakeMult))/avgLifetime; // PAYING new students / mo (for CAC)
+    const currentStock = initAct;                            // current TOTAL bodies (incl. retakes)
 
     // === which stock drives the headline economics? ===
     const viewStock = (view==='now') ? currentStock : steadyStock;
-    const servedStock = Math.min(viewStock, maxStock);       // can't seat beyond window capacity
+    const servedStock = Math.min(viewStock, maxStock);       // TOTAL bodies seated (can't exceed window capacity)
+    const payingStock = servedStock/(1+retakeMult);          // revenue-generating bodies
+    const retakeStock = servedStock - payingStock;           // zero-revenue retake bodies
     const overflow = Math.max(0, viewStock - maxStock);
 
     // === SECTION A: total classes — from BLENDED fill (off-peak underfill pushes count up), floored per level ===
@@ -160,9 +168,9 @@
     const marginalClassCost = ptCostPerClass + ro + (roomsScarce ? opp : 0);
     const breakEven = contribPerStudent>0 ? marginalClassCost/contribPerStudent : 999;
 
-    // -------- totals from the (served) stock — current + new combined --------
-    const revenue = servedStock*feePerMonth;
-    const varCostTotal = servedStock*vcPerMonth;
+    // -------- totals: revenue from PAYING bodies; variable cost & classes from ALL bodies --------
+    const revenue = payingStock*feePerMonth;                 // retakes generate zero revenue
+    const varCostTotal = servedStock*vcPerMonth;             // every body (incl. retakes) needs materials
     const roomCostTotal = ro*classesRunning;
     const perClassBucket = ptCostTotal + roomCostTotal;
     const fixedTotal = fix + ftsal;
@@ -179,7 +187,7 @@
 
     // upsell scales with the whole active base (current + new), via its share of lifetime
     const upsellShare = avgLifetime>0 ? (upPct*upCourses*cm)/avgLifetime : 0;
-    const upsellStock = servedStock*upsellShare;
+    const upsellStock = payingStock*upsellShare;             // upsell revenue comes from paying base
     const upsellRev = upsellStock*feePerMonth;
 
     // -------- lifetime value (flows, view-independent) --------
@@ -189,11 +197,29 @@
 
     const marginPerClass = classSize*contribPerStudent - marginalClassCost;
 
-    // -------- deferred revenue (on the served stock) --------
-    const courseStartsPerMonth = cm>0 ? servedStock/cm : 0;
+    // -------- deferred revenue (paying bodies only) --------
+    const courseStartsPerMonth = cm>0 ? payingStock/cm : 0;
     const cashIn = courseStartsPerMonth*fee;
     const recognized = revenue;
-    const unearned = servedStock*feePerMonth*Math.max(0,(cm-1))/2;
+    const unearned = payingStock*feePerMonth*Math.max(0,(cm-1))/2;
+
+    // === OUTCOME GUARANTEE COST (state-dependent) ===
+    // Seat opportunity cost: paying students DISPLACED because retakes consumed scarce capacity.
+    // Exactly zero when demand-constrained (spare seats have no alternative use); rises to full
+    // lost contribution only as total demand pushes past window capacity. Ties to maxStock.
+    const payingNoRetake = Math.min(inflowDemand*avgLifetime, maxStock);
+    const payingServed   = Math.min(inflowDemand*avgLifetime*(1+retakeMult), maxStock)/(1+retakeMult);
+    const displacedPaying = Math.max(0, payingNoRetake - payingServed);
+    const displacedFrac = retakeStock>0 ? displacedPaying/retakeStock : 0;
+    const extraBodyFrac = 1 - displacedFrac;   // retakes that are EXTRA bodies (vs. ones replacing paying at capacity)
+    // Extra-body cost (demand-constrained): materials + their share of class/teacher cost. Fades to 0
+    // as retakes start displacing rather than adding (at capacity the body was going to be there anyway).
+    const retakeVarCost = retakeStock*vcPerMonth*extraBodyFrac;
+    const retakeCapacityCost = (servedStock>0 ? perClassBucket*(retakeStock/servedStock) : 0)*extraBodyFrac;
+    // at capacity the retake still consumes materials, so a displaced seat loses the full tuition (not just contribution)
+    const retakeSeatOpp = displacedPaying*feePerMonth;
+    const guaranteeCost = retakeVarCost + retakeCapacityCost + retakeSeatOpp;
+    const revPerActive = servedStock>0 ? revenue/servedStock : 0;                             // diluted by zero-revenue retakes
 
     // === SECTION D: FT capacity sanity check (validate, never override) ===
     const ftTeachersPaid = ftper>0 ? ftsal/ftper : 0;        // FT teachers the salary funds
@@ -203,7 +229,7 @@
     // -------- stock projection --------
     const H = 24;
     const series = [initAct];
-    for (let t=1; t<=H; t++) series.push(Math.min(maxStock, series[t-1]*(1-g) + inflowDemand));
+    for (let t=1; t<=H; t++) series.push(Math.min(maxStock, series[t-1]*(1-g) + totalInflow));
     const yMax = Math.max(...series, steadyStock, 10)*1.12;
     $('chart').innerHTML = buildChart(series, steadyStock, yMax);
     const dir = steadyStock - initAct;
@@ -308,6 +334,25 @@
     setText('t-ec', (effConv*100).toFixed(1)+'%');
 
     setText('t-uprev', fmtM(upsellRev));
+
+    // outcome-guarantee panel
+    setText('g-students', Math.round(retakeStock));
+    setText('g-var', '−'+fmtM(retakeVarCost));
+    setText('g-cap', '−'+fmtM(retakeCapacityCost));
+    setText('g-opp', '−'+fmtM(retakeSeatOpp));
+    setText('g-total', fmtM(guaranteeCost), 'var(--color-text-danger)');
+    setText('g-rev', fmtM1(revPerActive)+' / mo (vs '+fmtM1(feePerMonth)+' / paying)');
+    let gnote;
+    if (failRate<=0){
+      gnote = 'No outcome guarantee modelled (fail rate 0%).';
+    } else if (displacedFrac < 0.05){
+      gnote = 'Classes have empty seats, so retakes mostly fill otherwise-idle capacity — the cost is the extra bodies (materials + their share of classes/teachers), with ~no displacement. As demand pushes you toward capacity, the seat cost rises.';
+    } else if (displacedFrac < 0.9){
+      gnote = 'Capacity is getting tight — retakes are starting to crowd out paying students, so seat opportunity cost is climbing on top of the extra-bodies cost.';
+    } else {
+      gnote = 'At capacity — every retake now displaces a paying student, so the guarantee costs close to full lost tuition on top of the extra-bodies cost.';
+    }
+    setText('g-note', gnote);
 
     // per-window capacity display
     setText('w-main', Math.round(mainUtil*100)+'% full', mainUtil>=0.85 ? 'var(--color-text-danger)' : 'var(--text)');
