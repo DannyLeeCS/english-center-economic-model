@@ -155,9 +155,9 @@
     const unearned = servedStock*feePerMonth*Math.max(0,(cm-1))/2;
 
     // === SECTION D: FT capacity sanity check (validate, never override) ===
-    const impliedFT = ftper>0 ? ftsal/ftper : 0;
-    const ftCapClasses = impliedFT*ftcov;
-    const ftTol = Math.max(0.5, ftClasses*0.15);
+    const ftTeachersPaid = ftper>0 ? ftsal/ftper : 0;        // FT teachers the salary funds
+    const ftTeachersNeeded = ftcov>0 ? ftClasses/ftcov : 0;  // teachers to cover the FT classes
+    const ftTol = Math.max(0.4, ftTeachersNeeded*0.2);
 
     // -------- stock projection --------
     const H = 24;
@@ -193,16 +193,24 @@
     else if (classSize < cap-0.05){ b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap; fill seats before adding slots. '+Math.round(utilization*100)+'% of slots in use.'; b.classList.add('badge--demand'); }
     else { b.textContent='Tight — classes near the cap and slots nearly full ('+Math.round(utilization*100)+'% of slots in use).'; b.classList.add('badge--ok'); }
 
-    // FT sanity-check badge
+    // FT sanity-check badge — spoken in teachers, with correct guidance
     const fb=$('ft-badge'); fb.classList.remove('badge--cap','badge--warn','badge--ok');
-    if (ftCapClasses - ftClasses > ftTol){
-      fb.textContent='FT salary staffs ~'+ftCapClasses.toFixed(0)+' classes but only '+ftClasses.toFixed(1)+' are full-time — paying for idle capacity. Raise PT% or cut salary.';
+    if (ftClasses < 0.05){
+      if (ftsal > 0){
+        fb.textContent='All classes are part-time (PT% = 100), yet you’re still paying '+fmtM(ftsal)+' in full-time salary. Set FT salary to 0 to fully go part-time.';
+        fb.classList.add('badge--warn');
+      } else {
+        fb.textContent='All classes part-time, no full-time salary — staffing is consistent.';
+        fb.classList.add('badge--ok');
+      }
+    } else if (ftTeachersPaid - ftTeachersNeeded > ftTol){
+      fb.textContent='Overstaffed on full-timers — '+fmtM(ftsal)+' funds ~'+ftTeachersPaid.toFixed(1)+' FT teachers, but only ~'+ftTeachersNeeded.toFixed(1)+' are needed for your '+ftClasses.toFixed(0)+' full-time classes. Cut FT salary, or give full-timers more classes (lower PT%).';
       fb.classList.add('badge--warn');
-    } else if (ftClasses - ftCapClasses > ftTol){
-      fb.textContent='FT salary covers only ~'+ftCapClasses.toFixed(0)+' classes but '+ftClasses.toFixed(1)+' are full-time — can’t staff them. Raise FT salary or lift PT%.';
+    } else if (ftTeachersNeeded - ftTeachersPaid > ftTol){
+      fb.textContent='Understaffed on full-timers — your '+ftClasses.toFixed(0)+' full-time classes need ~'+ftTeachersNeeded.toFixed(1)+' teachers, but '+fmtM(ftsal)+' funds only ~'+ftTeachersPaid.toFixed(1)+'. Raise FT salary, or shift classes to part-time (raise PT%).';
       fb.classList.add('badge--cap');
     } else {
-      fb.textContent='FT budget (~'+ftCapClasses.toFixed(0)+' classes) matches the '+ftClasses.toFixed(1)+' full-time classes.';
+      fb.textContent='Full-time staffing looks right — ~'+ftTeachersPaid.toFixed(1)+' FT teachers fund your '+ftClasses.toFixed(0)+' full-time classes.';
       fb.classList.add('badge--ok');
     }
 
