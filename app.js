@@ -134,7 +134,7 @@
     const roomCostTotal = ro*classesRunning;
     const perClassBucket = ptCostTotal + roomCostTotal;
     const fixedTotal = fix + ftsal;
-    const profit = revenue - varCostTotal - perClassBucket - fixedTotal;
+    const profit = revenue - varCostTotal - perClassBucket - fixedTotal - mkt;  // marketing is a real monthly cost
 
     // upsell scales with the whole active base (current + new), via its share of lifetime
     const upsellShare = avgLifetime>0 ? (upPct*upCourses*cm)/avgLifetime : 0;
@@ -212,6 +212,7 @@
     setText('p-pt', '−'+fmtM(ptCostTotal));
     setText('p-room', '−'+fmtM(roomCostTotal));
     setText('p-ft', '−'+fmtM(ftsal));
+    setText('p-mkt', '−'+fmtM(mkt));
     setText('p-oh', '−'+fmtM(fix));
     setText('p-profit', fmtM(profit), profit>=0 ? 'var(--color-text-success)' : 'var(--color-text-danger)');
 

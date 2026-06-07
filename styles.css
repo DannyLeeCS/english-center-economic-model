@@ -289,6 +289,7 @@ input[type="range"]::-moz-range-thumb{
 .dot-pt{ background:#fbbf24; }
 .dot-room{ background:#a78bfa; }
 .dot-ft{ background:#f472b6; }
+.dot-mkt{ background:#34d399; }
 .dot-oh{ background:#64748b; }
 .detail tr.total td{ border-top:1px solid var(--border); padding-top:10px; font-size:14px; color:var(--text); }
 .detail .hint{ margin-top:10px; }
