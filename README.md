@@ -190,27 +190,37 @@ maxStock      = maxClasses × effFill                    // capacity ceiling, in
 ```
 
 ### 4.4 The stock (paying + retake bodies)
+The funnel produces **paying** demand; retake bodies derive from it. Paying capacity is
+fragmentation-limited (`maxStock = maxClasses × effFill`).
 ```
 retakeMult    = failRate × retakeCourses               // retake bodies per paying body
-totalInflow   = inflowDemand × (1 + retakeMult)        // paying + retake bodies entering / month
-desiredStock  = totalInflow × avgLifetime              // total bodies the funnel + retention want
-steadyStock   = min(desiredStock, maxStock)            // capped by capacity
-currentStock  = initAct                                 // today's total bodies
+totalInflow   = inflowDemand × (1 + retakeMult)        // paying + retake — used only for the chart
+desiredPaying = inflowDemand × avgLifetime
+steadyPaying  = min(desiredPaying, maxStock)           // paying the funnel + capacity sustain
+steadyStock   = steadyPaying × (1 + retakeMult)        // TOTAL bodies (paying + retake), chart/KPI
+currentStock  = initAct                                 // today's total bodies (incl. retakes)
 
-viewStock     = (view = now) ? currentStock : steadyStock
-servedStock   = min(viewStock, maxStock)               // total bodies actually seated
-payingStock   = servedStock / (1 + retakeMult)         // revenue-generating
-retakeStock   = servedStock − payingStock              // zero-revenue
+viewTotal     = (view = now) ? currentStock : steadyStock
+payingStock   = min(viewTotal / (1 + retakeMult), maxStock)   // revenue-generating
+retakeStock   = payingStock × retakeMult                       // derived from paying throughput
+servedStock   = payingStock + retakeStock                      // total bodies seated
 ```
 This is **Little's Law**: stock = inflow × time-in-system. `initAct` only seeds the **Now** view and
-the projection's starting point; it does **not** change the steady state (a funnel attractor is
-independent of where you start).
+the projection's starting point; it does **not** change the steady state.
 
 ### 4.5 Class count & per-window utilization
+Classes are scheduled for the **paying** students. Retake students **re-join those existing
+classes**, filling the empty seats (`cap − fill`) before any new class is needed — they do **not**
+inflate the class count one-for-one.
 ```
-classesNeeded   = max(lvl, ceil(viewStock / effFill))  // off-peak underfill pushes this UP
-classesRunning  = min(classesNeeded, maxClasses)
-classSize       = servedStock / classesRunning         // the "Actual size you fill" (blended)
+classesForPaying = max(lvl, ceil(payingStock / effFill))
+emptySeats       = max(0, classesForPaying × cap − payingStock)   // slack retakes can re-join
+excessRetakes    = max(0, retakeStock − emptySeats)               // only these force new classes
+extraClasses     = excessRetakes > 0 ? ceil(excessRetakes / effFill) : 0
+classesNeeded    = classesForPaying + extraClasses
+classesRunning   = min(classesNeeded, maxClasses)
+classSize        = payingStock / classesRunning        // PAYING fill — drives break-even
+totalFill        = servedStock / classesRunning        // total bodies/class (incl. retakes), ≤ cap
 
 mainClasses     = classesRunning × mainpct
 wkndClasses     = classesRunning × wkndpct
@@ -220,6 +230,8 @@ bindingUtil     = max(mainUtil, wkndUtil)
 capacityConstrained = classesNeeded > maxClasses
 roomsScarce     = forceScarce OR bindingUtil ≥ 0.95     // opportunity cost auto-engages here
 ```
+So raising the fail rate makes classes **fuller** (`totalFill` rises toward `cap`) but does **not**
+add classes until the empty seats run out.
 
 ### 4.6 Teacher split & cost
 ```
@@ -236,11 +248,12 @@ ptCostTotal      = ptClasses × ptCostPerClass           // part-timers scale wi
 marginalClassCost = ptCostPerClass + ro + (roomsScarce ? opp : 0)
 breakEven         = marginalClassCost / contribPerStudent          // CONTRIBUTION break-even
 
-carriedMonthly        = ptCostTotal + roomCostTotal + ftsal + fix + mkt   // every non-variable cost
+carriedMonthly        = ptCostTotal + roomCostTotal + ftsal + fix + mkt + retakeStock × vcPerMonth
 fullyLoadedCostPerClass = carriedMonthly / classesRunning
 fullyLoadedBE         = fullyLoadedCostPerClass / contribPerStudent // FULLY-LOADED break-even (the floor)
 ```
-**Invariant:** `classSize ≥ fullyLoadedBE  ⟺  profit ≥ 0`.
+Retake materials are folded into `carriedMonthly` because the **paying** students must cover them.
+**Invariant:** `classSize (paying fill) ≥ fullyLoadedBE  ⟺  profit ≥ 0`.
 
 ### 4.8 The monthly P&L
 ```
@@ -267,29 +280,25 @@ marginPerClass = classSize × contribPerStudent − marginalClassCost
 per month (retakes are not acquired through marketing).
 
 ### 4.10 Outcome-guarantee (retake) cost — state-dependent
-The whole point: a retake's cost depends on whether its seat could have been **sold**.
+Retakes re-join existing classes (§4.5). The cost depends on whether their seat was idle or scarce.
 ```
-payingNoRetake  = min(inflowDemand × avgLifetime, maxStock)               // paying you'd serve without the guarantee
-payingServed    = min(inflowDemand × avgLifetime × (1+retakeMult), maxStock) / (1+retakeMult)
-displacedPaying = max(0, payingNoRetake − payingServed)                    // paying crowded out by retakes
-displacedFrac   = displacedPaying / retakeStock
-extraBodyFrac   = 1 − displacedFrac
+classShortfall  = max(0, classesNeeded − maxClasses)         // classes we couldn't run (≈0 normally)
+displacedPaying = min(retakeStock, classShortfall × effFill) // paying bumped at capacity
+nonDisplaced    = retakeStock − displacedPaying
 
-// (a) extra-body cost — dominates when DEMAND-CONSTRAINED (spare seats)
-retakeVarCost      = retakeStock × vcPerMonth × extraBodyFrac
-retakeCapacityCost = perClassBucket × (retakeStock / servedStock) × extraBodyFrac
-// (b) seat opportunity cost — ZERO with spare seats, full tuition at capacity
+// (a) extra-body cost — the usual demand-constrained case
+retakeVarCost      = nonDisplaced × vcPerMonth               // just materials for the re-joining bodies
+retakeCapacityCost = extraClasses × (perClassBucket / classesRunning)  // only if seats overflowed → new classes
+// (b) seat opportunity cost — ZERO while seats are spare, full tuition once at capacity
 retakeSeatOpp      = displacedPaying × feePerMonth
 guaranteeCost      = retakeVarCost + retakeCapacityCost + retakeSeatOpp
 ```
-- **Demand-constrained** (the usual state): `displacedPaying = 0`, so the seat cost is **exactly
-  zero** — retakes just fill otherwise-idle capacity and cost only materials + their share of
-  classes. This is the dominant cost.
-- **At capacity**: each retake displaces a paying student, so the cost flips to **full lost
-  tuition** (materials are spent on whoever sits there). The extra-body terms fade to zero so nothing
-  is double-counted.
-- Verified: `guaranteeCost` equals the true profit delta (profit-without-guarantee − profit-with)
-  **exactly in both regimes**.
+- **Demand-constrained** (the usual state): classes have spare seats, so retakes cost **only their
+  materials** — no new classes (`extraClasses = 0`), no displacement. This is the dominant cost.
+- **At capacity**: empty seats are gone, so excess retakes add classes, and beyond that they
+  **displace paying students** → full lost tuition.
+- Verified: in the demand-constrained regime `guaranteeCost` equals the true profit delta
+  (profit-without-guarantee − profit-with) **exactly**.
 
 > **Second-order tension the model surfaces:** filling classes / growing demand toward capacity makes
 > the guarantee *more* expensive, because empty seats disappear and retakes start displacing payers.
@@ -306,7 +315,7 @@ unearned     = payingStock × feePerMonth × (cm − 1) / 2 // cash held but owe
 24-month forward simulation from today's headcount:
 ```
 series[0] = initAct
-series[t] = min(maxStock, series[t−1] × (1 − g) + totalInflow)
+series[t] = min(maxTotalStock, series[t−1] × (1 − g) + totalInflow)   // maxTotalStock = maxClasses × cap
 ```
 The dashed line marks `steadyStock`; the curve rises, flattens, or declines toward it depending on
 whether `totalInflow` exceeds current outflow.
