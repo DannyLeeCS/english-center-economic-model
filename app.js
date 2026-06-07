@@ -4,7 +4,7 @@
     fee:CY, vc:CY, ro:CY, cm:CY, fix:CY,
     courses:AM, uppct:AM, upcourses:AM,
     ftsal:CY, ptpct:CY, pthr:CY, pthrs:CY, ftper:CY, ftcov:CY,
-    cap:VI, avgcls:VI, rooms:VI, sess:VI, evesl:VI, evedays:VI, wkndsl:VI, wknddays:VI, mainpct:VI, wkndpct:VI, opp:VI,
+    cap:VI, avgcls:VI, rooms:VI, sess:VI, evesl:VI, evedays:VI, wkndsl:VI, wknddays:VI, mainpct:VI, wkndpct:VI, offpeakfill:VI, opp:VI,
     mkt:EM, cpl:EM, conv:EM, lvl:EM, wait:EM, initact:EM
   };
   const sliderIds = Object.keys(ACCENT);
@@ -60,7 +60,7 @@
     const ftper=num('ftper'), ftcov=num('ftcov');
     const cap=num('cap'), avgcls=num('avgcls'), rooms=num('rooms'), opp=num('opp');
     const sess=num('sess'), evesl=num('evesl'), evedays=num('evedays'), wkndsl=num('wkndsl'), wknddays=num('wknddays');
-    const mainpct=num('mainpct')/100, wkndpct=num('wkndpct')/100;
+    const mainpct=num('mainpct')/100, wkndpct=num('wkndpct')/100, opf=num('offpeakfill')/100;
     const mkt=num('mkt'), cpl=num('cpl'), conv=num('conv'), lvl=num('lvl'), wait=num('wait');
     const initAct=num('initact'), fix=num('fix');
     const useElastic=$('elastic').checked, forceScarce=$('scarce').checked;
@@ -72,7 +72,7 @@
     setText('v-pthrs',pthrs); setText('v-ftper',fmtM(ftper)); setText('v-ftcov',ftcov);
     setText('v-cap',cap); setText('v-avgcls',avgcls); setText('v-rooms',rooms); setText('v-opp',fmtM(opp));
     setText('v-sess',sess); setText('v-evesl',evesl); setText('v-evedays',evedays); setText('v-wkndsl',wkndsl); setText('v-wknddays',wknddays);
-    setText('v-mainpct',Math.round(mainpct*100)+'%'); setText('v-wkndpct',Math.round(wkndpct*100)+'%');
+    setText('v-mainpct',Math.round(mainpct*100)+'%'); setText('v-wkndpct',Math.round(wkndpct*100)+'%'); setText('v-offpeakfill',Math.round(opf*100)+'%');
     setText('v-mkt',fmtM(mkt)); setText('v-cpl',fmtK(cpl)); setText('v-conv',conv+'%');
     setText('v-lvl',lvl); setText('v-wait',wait+(wait===1?' wk':' wks')); setText('v-initact',Math.round(initAct));
     setText('v-fix',fmtM(fix));
@@ -99,8 +99,14 @@
 
     // -------- TWO-WINDOW, SESSION-AWARE CAPACITY --------
     // Capacity is hours in usable windows, not rooms. A class consumes `sess` slot-instances/week.
-    const effAvg = Math.min(Math.max(avgcls, 0.5), cap);     // real avg fill, never above the physical cap
+    const effAvg = Math.min(Math.max(avgcls, 0.5), cap);     // normal (prime-window) class fill
     const sessW = Math.max(0.5, sess);                       // sessions/class/week (the divisor)
+
+    // FIX 2: off-peak classes (the share in neither prime window) fill worse → blended effective fill.
+    const primeShare = Math.min(1, mainpct + wkndpct);
+    const offpeakPct = Math.max(0, 1 - mainpct - wkndpct);
+    const blendFactor = primeShare + offpeakPct*opf;         // ≤ 1 — off-peak underfill drags the average down
+    const effFill = Math.max(0.25, effAvg * blendFactor);    // overall avg students/class incl. off-peak underfill
 
     const mainSupply = rooms * evesl * evedays;              // weekday-evening slot-instances / week
     const wkndSupply = rooms * wkndsl * wknddays;            // weekend-morning slot-instances / week
@@ -112,7 +118,7 @@
     const maxByMain = (mainpct>0 && mainSupply>0) ? mainCapClasses/mainpct : Infinity;
     const maxByWknd = (wkndpct>0 && wkndSupply>0) ? wkndCapClasses/wkndpct : Infinity;
     const maxClasses = Math.min(maxByMain, maxByWknd);       // may be Infinity if both windows unused
-    const maxStock = (isFinite(maxClasses) ? maxClasses : 1e9) * effAvg;
+    const maxStock = (isFinite(maxClasses) ? maxClasses : 1e9) * effFill;
 
     const desiredStock = inflowDemand*avgLifetime;
     const steadyStock = Math.min(desiredStock, maxStock);    // what marketing + retention sustain
@@ -124,16 +130,16 @@
     const servedStock = Math.min(viewStock, maxStock);       // can't seat beyond window capacity
     const overflow = Math.max(0, viewStock - maxStock);
 
-    // === SECTION A: total classes — from actual average fill, floored per level, capped by windows ===
-    const classesNeeded = Math.max(lvl, Math.ceil(viewStock / effAvg));
+    // === SECTION A: total classes — from BLENDED fill (off-peak underfill pushes count up), floored per level ===
+    const classesNeeded = Math.max(lvl, Math.ceil(viewStock / effFill));
     const classesRunning = Math.min(classesNeeded, isFinite(maxClasses) ? maxClasses : classesNeeded);
-    const classSize = classesRunning>0 ? servedStock/classesRunning : 0;
+    const classSize = classesRunning>0 ? servedStock/classesRunning : 0;  // overall avg fill incl. off-peak
 
-    // === per-window load & utilization (load = classes × sessions/week) ===
-    const offpeakPct  = Math.max(0, 1 - mainpct - wkndpct);
+    // === per-window load & utilization (load = classes × sessions/week; off-peak uses neither window) ===
     const mainClasses = classesRunning*mainpct;
     const wkndClasses = classesRunning*wkndpct;
     const offpeakClasses = classesRunning*offpeakPct;
+    const offpeakWastedSeats = offpeakClasses * effAvg * (1 - opf);  // capacity wasted to off-peak underfill
     const mainUtil = mainSupply>0 ? (mainClasses*sessW)/mainSupply : 0;
     const wkndUtil = wkndSupply>0 ? (wkndClasses*sessW)/wkndSupply : 0;
     const blendedUtil = (mainSupply+wkndSupply)>0 ? ((mainClasses+wkndClasses)*sessW)/(mainSupply+wkndSupply) : 0;
@@ -161,6 +167,15 @@
     const perClassBucket = ptCostTotal + roomCostTotal;
     const fixedTotal = fix + ftsal;
     const profit = revenue - varCostTotal - perClassBucket - fixedTotal - mkt;  // marketing is a real monthly cost
+
+    // FIX 1: fully-loaded break-even — every class must help carry ALL monthly non-variable costs
+    // (its own PT teacher + room, plus an allocated share of FT salary, overhead and marketing).
+    const carriedMonthly = ptCostTotal + roomCostTotal + ftsal + fix + mkt;
+    const fullyLoadedCostPerClass = classesRunning>0 ? carriedMonthly/classesRunning : 0;
+    const fullyLoadedBE = contribPerStudent>0 ? fullyLoadedCostPerClass/contribPerStudent : Infinity;
+    // consistency invariant: fill ≥ fully-loaded break-even  ⟺  profit ≥ 0
+    if (contribPerStudent>0 && ((classSize >= fullyLoadedBE) !== (profit >= -1e-6)))
+      console.warn('break-even/profit sign mismatch', {classSize, fullyLoadedBE, profit});
 
     // upsell scales with the whole active base (current + new), via its share of lifetime
     const upsellShare = avgLifetime>0 ? (upPct*upCourses*cm)/avgLifetime : 0;
@@ -197,7 +212,8 @@
         : (dir>0 ? 'rising toward '+Math.round(steadyStock) : 'declining toward '+Math.round(steadyStock)));
 
     // =================== render ===================
-    setText('o-be', breakEven>99 ? 'n/a' : breakEven.toFixed(1));
+    const makesMoney = profit >= 0;
+    setText('o-be', (contribPerStudent<=0 || !isFinite(fullyLoadedBE)) ? 'n/a' : fullyLoadedBE.toFixed(1));
     setText('o-cs', classSize.toFixed(1));
     setText('o-leads', Math.round(leads));
     setText('o-enroll', Math.round(seatedInflow));
@@ -209,10 +225,21 @@
     setText('lbl-active', viewLbl); setText('lbl-profit', viewLbl);
 
     const gEl=$('gap'); gEl.classList.remove('gap--good','gap--bad');
-    const surplus = classSize - breakEven;
-    if (breakEven>99){ gEl.textContent='Variable cost exceeds tuition per month — no class size is profitable.'; gEl.classList.add('gap--bad'); }
-    else if (surplus>=0){ gEl.textContent='You fill '+classSize.toFixed(1)+' vs '+breakEven.toFixed(1)+' needed — '+surplus.toFixed(1)+' students of cushion above break-even.'; gEl.classList.add('gap--good'); }
-    else { gEl.textContent='You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+'. Every class loses money.'; gEl.classList.add('gap--bad'); }
+    const surplus = classSize - fullyLoadedBE;
+    if (contribPerStudent<=0){
+      gEl.textContent='Variable cost exceeds tuition per month — no class size is profitable.'; gEl.classList.add('gap--bad');
+    } else if (surplus>=0){
+      gEl.textContent='You fill '+classSize.toFixed(1)+' vs '+fullyLoadedBE.toFixed(1)+' needed (fully loaded) — +'+surplus.toFixed(1)+' cushion. The business '+(makesMoney?'makes':'loses')+' money.';
+      gEl.classList.add(makesMoney?'gap--good':'gap--bad');
+    } else {
+      gEl.textContent='You fill '+classSize.toFixed(1)+' but need '+fullyLoadedBE.toFixed(1)+' (fully loaded) — short by '+Math.abs(surplus).toFixed(1)+'. The business '+(makesMoney?'makes':'loses')+' money.';
+      gEl.classList.add(makesMoney?'gap--good':'gap--bad');
+    }
+
+    // dual break-even card
+    setText('be-full', (contribPerStudent<=0 || !isFinite(fullyLoadedBE)) ? 'n/a' : fullyLoadedBE.toFixed(1)+' students', makesMoney ? 'var(--color-text-success)' : 'var(--color-text-danger)');
+    setText('be-contrib', breakEven>99 ? 'n/a' : breakEven.toFixed(1)+' students');
+    setText('be-note', 'At '+classSize.toFixed(1)+' students/class vs the fully-loaded floor of '+(isFinite(fullyLoadedBE)?fullyLoadedBE.toFixed(1):'n/a')+', the business '+(makesMoney?'makes':'loses')+' money — matching the P&L sign. Fully-loaded spreads FT salary, overhead & marketing across all classes (planning view: is a class pulling its weight?). Contribution is the marginal view (should you run one more class?). Fixed costs don’t truly vary per class, so use fully-loaded for planning, not marginal decisions.');
 
     const b=$('cap-badge'); b.classList.remove('badge--cap','badge--demand','badge--ok');
     const bindName  = mainUtil>=wkndUtil ? 'weekday evenings' : 'weekend mornings';
@@ -287,6 +314,13 @@
     setText('w-main-sub', '· '+mainClasses.toFixed(0)+' / '+mainCapClasses.toFixed(0)+' classes');
     setText('w-wknd', Math.round(wkndUtil*100)+'% full', wkndUtil>=0.85 ? 'var(--color-text-danger)' : 'var(--text)');
     setText('w-wknd-sub', '· '+wkndClasses.toFixed(0)+' / '+wkndCapClasses.toFixed(0)+' classes');
+    if (offpeakPct > 0.001){
+      setText('w-off', Math.round(opf*100)+'% of normal', opf<0.5 ? 'var(--color-text-warning)' : 'var(--text)');
+      setText('w-off-sub', '· '+offpeakClasses.toFixed(0)+' classes, ~'+Math.round(offpeakWastedSeats)+' wasted seats');
+    } else {
+      setText('w-off', '—', 'var(--text-faint)');
+      setText('w-off-sub', '· no off-peak classes');
+    }
     setText('w-blend', Math.round(blendedUtil*100)+'%');
     let wnote;
     const noSupplyLoad = (mainpct>0 && mainSupply<=0) || (wkndpct>0 && wkndSupply<=0);
@@ -295,7 +329,7 @@
     } else if (noSupplyLoad){
       wnote = 'Classes are assigned to a window that has no slots — set its slots/days, or move that load to the other window.';
     } else if (offpeakPct > 0.001){
-      wnote = Math.round(offpeakPct*100)+'% of classes ('+offpeakClasses.toFixed(0)+') fall outside both prime windows — those off-peak slots are the hardest to fill.';
+      wnote = Math.round(offpeakPct*100)+'% of classes ('+offpeakClasses.toFixed(0)+') run off-peak at '+Math.round(opf*100)+'% fill — ~'+Math.round(offpeakWastedSeats)+' wasted seats, forcing extra classes & cost. Move them into a prime window or drop them.';
     } else {
       const tight = mainUtil>=wkndUtil ? 'Weekday evenings' : 'Weekend mornings';
       wnote = tight+' are the tighter window. Headroom: evenings '+Math.max(0,Math.round((1-mainUtil)*100))+'%, weekends '+Math.max(0,Math.round((1-wkndUtil)*100))+'%.';

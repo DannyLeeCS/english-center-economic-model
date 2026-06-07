@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=11" />
+<link rel="stylesheet" href="styles.css?v=12" />
 </head>
 <body>
 <main class="page">
@@ -198,7 +198,13 @@
         <div class="lever">
           <div class="lever-top"><label for="s-wkndpct">% of classes in weekend mornings</label><span class="lever-val" id="v-wkndpct">25%</span></div>
           <input type="range" min="0" max="100" step="5" value="25" id="s-wkndpct" />
-          <div class="hint">Share in the weekend window. Any remainder runs in off-peak times — surfaced as hard-to-fill.</div>
+          <div class="hint">Share in the weekend window. Any remainder runs in off-peak times — see fill rate below.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-offpeakfill">Off-peak fill rate (% of normal)</label><span class="lever-val" id="v-offpeakfill">40%</span></div>
+          <input type="range" min="0" max="100" step="5" value="40" id="s-offpeakfill" />
+          <div class="hint">Classes outside both prime windows fill worse. At 0% they don't run at all; at 100% they fill like prime slots (unrealistic). Lower fill → more classes needed to seat the same students → higher cost.</div>
         </div>
 
         <label class="toggle">
@@ -320,8 +326,8 @@
 
     <div class="hero-tiles">
       <div class="tile tile--be">
-        <div class="tile-cap">Set by tuition + cost</div>
-        <div class="tile-label">Break-even size — what you need</div>
+        <div class="tile-cap">All costs ÷ classes</div>
+        <div class="tile-label">Break-even — fully loaded (real floor)</div>
         <div class="tile-num" id="o-be">—</div>
       </div>
       <div class="tile tile--fill">
@@ -356,6 +362,15 @@
         <tr><td class="cost"><span class="dot-oh"></span> Non-teacher overhead</td><td class="num neg" id="p-oh">—</td></tr>
         <tr class="total"><td>= Monthly profit</td><td class="num" id="p-profit">—</td></tr>
       </table>
+    </div>
+
+    <div class="detail">
+      <div class="detail-title">Break-even — two views <span class="muted">— must agree with the P&amp;L sign</span></div>
+      <table>
+        <tr><td>Fully-loaded <span class="muted">(real floor — covers FT, overhead &amp; marketing share)</span></td><td class="num" id="be-full">—</td></tr>
+        <tr><td>Contribution <span class="muted">(marginal — covers this class's part-time teacher only)</span></td><td class="num" id="be-contrib">—</td></tr>
+      </table>
+      <p class="hint" id="be-note"></p>
     </div>
 
     <div class="detail">
@@ -395,6 +410,7 @@
       <table>
         <tr><td>Weekday evenings <span class="muted" id="w-main-sub"></span></td><td class="num" id="w-main">—</td></tr>
         <tr><td>Weekend mornings <span class="muted" id="w-wknd-sub"></span></td><td class="num" id="w-wknd">—</td></tr>
+        <tr><td>Off-peak fill <span class="muted" id="w-off-sub"></span></td><td class="num" id="w-off">—</td></tr>
         <tr><td>Blended <span class="muted">(reference only)</span></td><td class="num" id="w-blend">—</td></tr>
       </table>
       <p class="hint" id="w-note"></p>
@@ -427,7 +443,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=11" defer></script>
+<script src="app.js?v=12" defer></script>
 </main>
 </body>
 </html>
