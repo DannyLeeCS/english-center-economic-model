@@ -122,26 +122,35 @@
     const maxClasses = Math.min(maxByMain, maxByWknd);       // may be Infinity if both windows unused
     const maxStock = (isFinite(maxClasses) ? maxClasses : 1e9) * effFill;
 
-    // outcome guarantee: failed students re-study free → extra zero-revenue bodies in the stock
+    // outcome guarantee: failed students re-study free → zero-revenue bodies that RE-JOIN existing
+    // classes (they fill the empty seats; they only force new classes once those seats run out).
     const retakeMult = failRate*retakeCourses;               // retake bodies per paying body
-    const totalInflow = inflowDemand*(1+retakeMult);         // paying + retake bodies entering / mo
+    const totalInflow = inflowDemand*(1+retakeMult);         // paying + retake bodies entering / mo (chart)
+    const maxTotalStock = (isFinite(maxClasses) ? maxClasses : 1e9) * cap;  // physical body ceiling (packed to cap)
 
-    const desiredStock = totalInflow*avgLifetime;            // total bodies (paying + retake) demanded
-    const steadyStock = Math.min(desiredStock, maxStock);    // total bodies marketing + retention sustain
-    const seatedInflow = (steadyStock/(1+retakeMult))/avgLifetime; // PAYING new students / mo (for CAC)
-    const currentStock = initAct;                            // current TOTAL bodies (incl. retakes)
+    // PAYING stock is fragmentation-limited: classes fill to effFill, windows cap the class count.
+    const desiredPaying = inflowDemand*avgLifetime;          // paying demanded
+    const steadyPaying  = Math.min(desiredPaying, maxStock); // paying sustained (maxStock = maxClasses × effFill)
+    const steadyStock   = steadyPaying*(1+retakeMult);       // total bodies at steady state (chart / KPI)
+    const seatedInflow  = steadyPaying/avgLifetime;          // PAYING new students / mo (for CAC)
+    const currentStock  = initAct;                           // current TOTAL bodies (incl. retakes)
 
     // === which stock drives the headline economics? ===
-    const viewStock = (view==='now') ? currentStock : steadyStock;
-    const servedStock = Math.min(viewStock, maxStock);       // TOTAL bodies seated (can't exceed window capacity)
-    const payingStock = servedStock/(1+retakeMult);          // revenue-generating bodies
-    const retakeStock = servedStock - payingStock;           // zero-revenue retake bodies
-    const overflow = Math.max(0, viewStock - maxStock);
+    const viewTotal   = (view==='now') ? currentStock : steadyStock;
+    const payingStock = Math.min(viewTotal/(1+retakeMult), maxStock);  // revenue-generating, capacity-capped
+    const retakeStock = payingStock*retakeMult;              // retakes derive from paying throughput
+    const servedStock = payingStock + retakeStock;           // total bodies seated
+    const overflow    = Math.max(0, viewTotal - servedStock);
 
-    // === SECTION A: total classes — from BLENDED fill (off-peak underfill pushes count up), floored per level ===
-    const classesNeeded = Math.max(lvl, Math.ceil(viewStock / effFill));
+    // === SECTION A: classes scheduled for PAYING; retakes re-join (fill empty seats); excess adds classes ===
+    const classesForPaying = Math.max(lvl, Math.ceil(payingStock / effFill));
+    const emptySeats   = Math.max(0, classesForPaying*cap - payingStock);   // slack retakes can re-join
+    const excessRetakes= Math.max(0, retakeStock - emptySeats);             // retakes needing new classes
+    const extraClasses = excessRetakes>0 ? Math.ceil(excessRetakes/effFill) : 0;
+    const classesNeeded= classesForPaying + extraClasses;
     const classesRunning = Math.min(classesNeeded, isFinite(maxClasses) ? maxClasses : classesNeeded);
-    const classSize = classesRunning>0 ? servedStock/classesRunning : 0;  // overall avg fill incl. off-peak
+    const classSize    = classesRunning>0 ? payingStock/classesRunning : 0;  // PAYING fill (drives break-even)
+    const totalFill    = classesRunning>0 ? servedStock/classesRunning : 0;  // total bodies per class (incl. retakes)
 
     // === per-window load & utilization (load = classes × sessions/week; off-peak uses neither window) ===
     const mainClasses = classesRunning*mainpct;
@@ -178,10 +187,12 @@
 
     // FIX 1: fully-loaded break-even — every class must help carry ALL monthly non-variable costs
     // (its own PT teacher + room, plus an allocated share of FT salary, overhead and marketing).
-    const carriedMonthly = ptCostTotal + roomCostTotal + ftsal + fix + mkt;
+    // retake bodies' materials are a real monthly cost the PAYING students must cover, so they
+    // belong in the carried amount — this keeps "paying fill ≥ break-even ⟺ profit ≥ 0" exact.
+    const carriedMonthly = ptCostTotal + roomCostTotal + ftsal + fix + mkt + retakeStock*vcPerMonth;
     const fullyLoadedCostPerClass = classesRunning>0 ? carriedMonthly/classesRunning : 0;
     const fullyLoadedBE = contribPerStudent>0 ? fullyLoadedCostPerClass/contribPerStudent : Infinity;
-    // consistency invariant: fill ≥ fully-loaded break-even  ⟺  profit ≥ 0
+    // consistency invariant: PAYING fill ≥ fully-loaded break-even  ⟺  profit ≥ 0
     if (contribPerStudent>0 && ((classSize >= fullyLoadedBE) !== (profit >= -1e-6)))
       console.warn('break-even/profit sign mismatch', {classSize, fullyLoadedBE, profit});
 
@@ -203,23 +214,20 @@
     const recognized = revenue;
     const unearned = payingStock*feePerMonth*Math.max(0,(cm-1))/2;
 
-    // === OUTCOME GUARANTEE COST (state-dependent) ===
-    // Seat opportunity cost: paying students DISPLACED because retakes consumed scarce capacity.
-    // Exactly zero when demand-constrained (spare seats have no alternative use); rises to full
-    // lost contribution only as total demand pushes past window capacity. Ties to maxStock.
-    const payingNoRetake = Math.min(inflowDemand*avgLifetime, maxStock);
-    const payingServed   = Math.min(inflowDemand*avgLifetime*(1+retakeMult), maxStock)/(1+retakeMult);
-    const displacedPaying = Math.max(0, payingNoRetake - payingServed);
+    // === OUTCOME GUARANTEE COST ===
+    // Retakes re-join existing classes. While classes have spare seats (the usual demand-constrained
+    // state) a retake costs only its materials — no new class, no displacement. Excess retakes that
+    // overflow the empty seats add classes (teacher + room). If even that exceeds capacity, retakes
+    // displace paying students → full lost tuition.
+    const classShortfall = Math.max(0, classesNeeded - (isFinite(maxClasses) ? maxClasses : classesNeeded));
+    const displacedPaying = Math.min(retakeStock, classShortfall*effFill);      // paying bumped at capacity (≈0 normally)
     const displacedFrac = retakeStock>0 ? displacedPaying/retakeStock : 0;
-    const extraBodyFrac = 1 - displacedFrac;   // retakes that are EXTRA bodies (vs. ones replacing paying at capacity)
-    // Extra-body cost (demand-constrained): materials + their share of class/teacher cost. Fades to 0
-    // as retakes start displacing rather than adding (at capacity the body was going to be there anyway).
-    const retakeVarCost = retakeStock*vcPerMonth*extraBodyFrac;
-    const retakeCapacityCost = (servedStock>0 ? perClassBucket*(retakeStock/servedStock) : 0)*extraBodyFrac;
-    // at capacity the retake still consumes materials, so a displaced seat loses the full tuition (not just contribution)
-    const retakeSeatOpp = displacedPaying*feePerMonth;
+    const nonDisplacedRetakes = Math.max(0, retakeStock - displacedPaying);
+    const retakeVarCost = nonDisplacedRetakes*vcPerMonth;                        // materials for the extra bodies
+    const retakeCapacityCost = classesRunning>0 ? extraClasses*(perClassBucket/classesRunning) : 0; // extra classes only
+    const retakeSeatOpp = displacedPaying*feePerMonth;                          // lost tuition when at capacity
     const guaranteeCost = retakeVarCost + retakeCapacityCost + retakeSeatOpp;
-    const revPerActive = servedStock>0 ? revenue/servedStock : 0;                             // diluted by zero-revenue retakes
+    const revPerActive = servedStock>0 ? revenue/servedStock : 0;              // diluted by zero-revenue retakes
 
     // === SECTION D: FT capacity sanity check (validate, never override) ===
     const ftTeachersPaid = ftper>0 ? ftsal/ftper : 0;        // FT teachers the salary funds
@@ -229,7 +237,7 @@
     // -------- stock projection --------
     const H = 24;
     const series = [initAct];
-    for (let t=1; t<=H; t++) series.push(Math.min(maxStock, series[t-1]*(1-g) + totalInflow));
+    for (let t=1; t<=H; t++) series.push(Math.min(maxTotalStock, series[t-1]*(1-g) + totalInflow));
     const yMax = Math.max(...series, steadyStock, 10)*1.12;
     $('chart').innerHTML = buildChart(series, steadyStock, yMax);
     const dir = steadyStock - initAct;
@@ -277,8 +285,8 @@
     } else if (bindingUtil >= 0.85){
       b.textContent='Getting tight — '+bindName+' at '+bindPct+'% full. Push new demand to '+otherName+' or add slots in that window before it saturates.';
       b.classList.add('badge--cap');
-    } else if (classSize < cap-0.05){
-      b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap, and both windows have headroom (evenings '+Math.round(mainUtil*100)+'%, weekends '+Math.round(wkndUtil*100)+'%). Growth comes from more students, not more rooms.';
+    } else if (totalFill < cap-0.05){
+      b.textContent='Demand-constrained — classes average '+totalFill.toFixed(1)+' of '+cap+' cap (incl. retakes), and both windows have headroom (evenings '+Math.round(mainUtil*100)+'%, weekends '+Math.round(wkndUtil*100)+'%). Growth comes from more students, not more rooms.';
       b.classList.add('badge--demand');
     } else {
       b.textContent='Balanced — classes near the cap; windows at evenings '+Math.round(mainUtil*100)+'%, weekends '+Math.round(wkndUtil*100)+'%.';
