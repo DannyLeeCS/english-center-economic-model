@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=6" />
+<link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
 <main class="page">
@@ -37,15 +37,15 @@
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-vc">Variable cost / student / course</label><span class="lever-val" id="v-vc">3M</span></div>
-          <input type="range" min="0" max="15" step="0.25" value="3" id="s-vc" />
-          <div class="hint">Attaches to a <strong>head</strong> — books, materials, per-student admin. Scales with bodies.</div>
+          <div class="lever-top"><label for="s-vc">Variable cost / student / course</label><span class="lever-val" id="v-vc">1M</span></div>
+          <input type="range" min="0" max="15" step="0.25" value="1" id="s-vc" />
+          <div class="hint">Attaches to a <strong>head</strong> — books, materials, per-student admin. Usually small (&lt;10% of tuition).</div>
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-ro">Room out-of-pocket / class / mo</label><span class="lever-val" id="v-ro">3M</span></div>
-          <input type="range" min="0" max="20" step="0.5" value="3" id="s-ro" />
-          <div class="hint">Electricity, AC, cleaning per running class. Teacher pay is <strong>not</strong> here — it's in Teachers.</div>
+          <div class="lever-top"><label for="s-ro">Room out-of-pocket / class / mo</label><span class="lever-val" id="v-ro">1.5M</span></div>
+          <input type="range" min="0" max="20" step="0.5" value="1.5" id="s-ro" />
+          <div class="hint">Utilities only — electricity, AC, cleaning per running class. Rent lives in Overhead &amp; rent. Teacher pay is in Teachers.</div>
         </div>
 
         <div class="lever">
@@ -64,21 +64,21 @@
       <div class="levers life">
 
         <div class="lever">
-          <div class="lever-top"><label for="s-courses">Courses bought at signup</label><span class="lever-val" id="v-courses">1.5</span></div>
-          <input type="range" min="1" max="6" step="0.5" value="1.5" id="s-courses" />
-          <div class="hint">Consumed sequentially. A 1.5-course student on a 3-month course stays ~4.5 months and pays ~1.5× tuition.</div>
+          <div class="lever-top"><label for="s-courses">Courses per student (level journey)</label><span class="lever-val" id="v-courses">3</span></div>
+          <input type="range" min="1" max="12" step="0.5" value="3" id="s-courses" />
+          <div class="hint">Average courses a student takes progressing through levels — <strong>this is your retention</strong>. 3 courses × 3-month course = ~9 months active, ~3× tuition over their stay.</div>
         </div>
 
         <div class="lever">
           <div class="lever-top"><label for="s-uppct">Active students upsold</label><span class="lever-val" id="v-uppct">15%</span></div>
           <input type="range" min="0" max="100" step="5" value="15" id="s-uppct" />
-          <div class="hint">Share of the <strong>existing active base</strong> you later sell more courses to. Zero acquisition cost — high margin.</div>
+          <div class="hint">Share of the active base you cross-sell <strong>extra</strong> courses to (exam prep, summer intensive) — on top of normal level progression. Zero acquisition cost.</div>
         </div>
 
         <div class="lever">
           <div class="lever-top"><label for="s-upcourses">Upsell courses / upsold student</label><span class="lever-val" id="v-upcourses">1</span></div>
           <input type="range" min="0" max="4" step="0.5" value="1" id="s-upcourses" />
-          <div class="hint">Extra courses sold later (distinct from signup courses). They extend active duration and feed back into the stock.</div>
+          <div class="hint">Extra cross-sell courses on top of the level journey. Distinct from progression above — don't double-count. They extend active duration.</div>
         </div>
 
       </div>
@@ -141,9 +141,9 @@
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-rooms">Rooms / simultaneous slots</label><span class="lever-val" id="v-rooms">30</span></div>
-          <input type="range" min="1" max="80" step="1" value="30" id="s-rooms" />
-          <div class="hint">How many classes can run at once. The binding constraint when demand is high.</div>
+          <div class="lever-top"><label for="s-rooms">Class slots / week (schedule capacity)</label><span class="lever-val" id="v-rooms">40</span></div>
+          <input type="range" min="1" max="200" step="1" value="40" id="s-rooms" />
+          <div class="hint">Max distinct classes your timetable can run = rooms × weekly time-slots per room. A room open ~60h/wk hosts ~10 classes/wk, so 8 rooms ≈ 80 slots. The binding constraint when demand is high.</div>
         </div>
 
         <label class="toggle">
@@ -166,13 +166,13 @@
       <div class="levers fill">
 
         <div class="lever">
-          <div class="lever-top"><label for="s-mkt">Marketing spend / month</label><span class="lever-val" id="v-mkt">400M</span></div>
-          <input type="range" min="0" max="2000" step="10" value="400" id="s-mkt" />
+          <div class="lever-top"><label for="s-mkt">Marketing spend / month</label><span class="lever-val" id="v-mkt">250M</span></div>
+          <input type="range" min="0" max="2000" step="10" value="250" id="s-mkt" />
         </div>
 
         <div class="lever">
-          <div class="lever-top"><label for="s-cpl">Cost per lead (CPL)</label><span class="lever-val" id="v-cpl">720k</span></div>
-          <input type="range" min="20" max="2000" step="10" value="720" id="s-cpl" />
+          <div class="lever-top"><label for="s-cpl">Cost per lead (CPL)</label><span class="lever-val" id="v-cpl">300k</span></div>
+          <input type="range" min="20" max="2000" step="10" value="300" id="s-cpl" />
         </div>
 
         <div class="lever">
@@ -228,12 +228,12 @@
 
     <!-- ---- Center overhead ---- -->
     <div class="lever-group">
-      <div class="lever-heading lever-heading--be">Center overhead <span class="drives">whole-center fixed</span></div>
+      <div class="lever-heading lever-heading--be">Overhead &amp; rent <span class="drives">whole-center fixed</span></div>
       <div class="levers be">
         <div class="lever">
-          <div class="lever-top"><label for="s-fix">Non-teacher overhead / month</label><span class="lever-val" id="v-fix">300M</span></div>
-          <input type="range" min="0" max="3000" step="10" value="300" id="s-fix" />
-          <div class="hint">Office staff, management, non-classroom lease, marketing overhead. <strong>No teacher salary here.</strong></div>
+          <div class="lever-top"><label for="s-fix">Overhead &amp; rent / month</label><span class="lever-val" id="v-fix">450M</span></div>
+          <input type="range" min="0" max="3000" step="10" value="450" id="s-fix" />
+          <div class="hint">Office &amp; admin staff, management, <strong>all rent/lease (classroom + office)</strong>, marketing overhead. Fixed regardless of class count. <strong>No teacher salary here.</strong></div>
         </div>
       </div>
     </div>
@@ -339,7 +339,7 @@
       <div class="detail-title">Stock &amp; capacity</div>
       <table>
         <tr><td>Upsell revenue / mo <span class="muted">(zero CAC)</span></td><td class="num" id="t-uprev">—</td></tr>
-        <tr><td>Room utilization</td><td class="num" id="t-util">—</td></tr>
+        <tr><td>Slot utilization</td><td class="num" id="t-util">—</td></tr>
       </table>
     </div>
 
@@ -363,7 +363,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=6" defer></script>
+<script src="app.js?v=7" defer></script>
 </main>
 </body>
 </html>

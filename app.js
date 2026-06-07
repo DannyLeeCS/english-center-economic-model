@@ -189,9 +189,9 @@
     else { gEl.textContent='You fill '+classSize.toFixed(1)+' but need '+breakEven.toFixed(1)+' — short by '+Math.abs(surplus).toFixed(1)+'. Every class loses money.'; gEl.classList.add('gap--bad'); }
 
     const b=$('cap-badge'); b.classList.remove('badge--cap','badge--demand','badge--ok');
-    if (capacityConstrained){ b.textContent='Capacity-constrained — '+Math.round(overflow)+' students can’t be seated; need '+classesNeeded.toFixed(0)+' classes but only '+rooms+' rooms ('+utilization.toFixed(1)+'×). Add rooms or they go unserved.'; b.classList.add('badge--cap'); }
-    else if (classSize < cap-0.05){ b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap; fill seats before adding rooms. '+Math.round(utilization*100)+'% of rooms in use.'; b.classList.add('badge--demand'); }
-    else { b.textContent='Tight — classes near the cap and rooms nearly full ('+Math.round(utilization*100)+'% of rooms in use).'; b.classList.add('badge--ok'); }
+    if (capacityConstrained){ b.textContent='Capacity-constrained — '+Math.round(overflow)+' students can’t be seated; need '+classesNeeded.toFixed(0)+' classes but only '+rooms+' weekly slots ('+utilization.toFixed(1)+'×). Add slots or they go unserved.'; b.classList.add('badge--cap'); }
+    else if (classSize < cap-0.05){ b.textContent='Demand-constrained — classes average '+classSize.toFixed(1)+' of '+cap+' cap; fill seats before adding slots. '+Math.round(utilization*100)+'% of slots in use.'; b.classList.add('badge--demand'); }
+    else { b.textContent='Tight — classes near the cap and slots nearly full ('+Math.round(utilization*100)+'% of slots in use).'; b.classList.add('badge--ok'); }
 
     // FT sanity-check badge
     const fb=$('ft-badge'); fb.classList.remove('badge--cap','badge--warn','badge--ok');
@@ -244,7 +244,7 @@
   }
 
   // ---------- persistence ----------
-  const STORAGE_KEY = 'ecm.state.v5';
+  const STORAGE_KEY = 'ecm.state.v6';
   function saveState(){
     try{
       const s = { mode, intakeMonths, view, elastic:$('elastic').checked, scarce:$('scarce').checked, deferred:$('deferred').checked };
