@@ -4,7 +4,7 @@
     fee:CY, vc:CY, ro:CY, cm:CY, fix:CY,
     courses:AM, uppct:AM, upcourses:AM,
     ftsal:CY, ptpct:CY, pthr:CY, pthrs:CY, ftper:CY, ftcov:CY,
-    cap:VI, rooms:VI, opp:VI,
+    cap:VI, avgcls:VI, rooms:VI, opp:VI,
     mkt:EM, cpl:EM, conv:EM, lvl:EM, wait:EM, initact:EM
   };
   const sliderIds = Object.keys(ACCENT);
@@ -58,7 +58,7 @@
     const courses=num('courses'), upPct=num('uppct')/100, upCourses=num('upcourses');
     const ftsal=num('ftsal'), ptpct=num('ptpct')/100, pthr=num('pthr'), pthrs=num('pthrs');
     const ftper=num('ftper'), ftcov=num('ftcov');
-    const cap=num('cap'), rooms=num('rooms'), opp=num('opp');
+    const cap=num('cap'), avgcls=num('avgcls'), rooms=num('rooms'), opp=num('opp');
     const mkt=num('mkt'), cpl=num('cpl'), conv=num('conv'), lvl=num('lvl'), wait=num('wait');
     const initAct=num('initact'), fix=num('fix');
     const useElastic=$('elastic').checked, forceScarce=$('scarce').checked;
@@ -68,7 +68,7 @@
     setText('v-courses',courses); setText('v-uppct',Math.round(upPct*100)+'%'); setText('v-upcourses',upCourses);
     setText('v-ftsal',fmtM(ftsal)); setText('v-ptpct',Math.round(ptpct*100)+'%'); setText('v-pthr',fmtK(pthr));
     setText('v-pthrs',pthrs); setText('v-ftper',fmtM(ftper)); setText('v-ftcov',ftcov);
-    setText('v-cap',cap); setText('v-rooms',rooms); setText('v-opp',fmtM(opp));
+    setText('v-cap',cap); setText('v-avgcls',avgcls); setText('v-rooms',rooms); setText('v-opp',fmtM(opp));
     setText('v-mkt',fmtM(mkt)); setText('v-cpl',fmtK(cpl)); setText('v-conv',conv+'%');
     setText('v-lvl',lvl); setText('v-wait',wait+(wait===1?' wk':' wks')); setText('v-initact',Math.round(initAct));
     setText('v-fix',fmtM(fix));
@@ -107,8 +107,9 @@
     const servedStock = Math.min(viewStock, maxStock);       // can't seat beyond room capacity
     const overflow = Math.max(0, viewStock - maxStock);
 
-    // === SECTION A: total classes — derived from the viewed stock, capped by rooms ===
-    const classesNeeded = lvl*Math.max(1, Math.ceil((viewStock/lvl)/cap));
+    // === SECTION A: total classes — from actual average class fill, floored at one per level ===
+    const effAvg = Math.min(Math.max(avgcls, 0.5), cap);          // real avg fill, never above the physical cap
+    const classesNeeded = Math.max(lvl, Math.ceil(viewStock / effAvg));
     const classesRunning = Math.min(classesNeeded, rooms);
     const classSize = classesRunning>0 ? servedStock/classesRunning : 0;
     const utilization = rooms>0 ? classesNeeded/rooms : 0;

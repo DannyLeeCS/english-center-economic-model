@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=9" />
+<link rel="stylesheet" href="styles.css?v=10" />
 </head>
 <body>
 <main class="page">
@@ -143,7 +143,13 @@
         <div class="lever">
           <div class="lever-top"><label for="s-cap">Physical class cap (students)</label><span class="lever-val" id="v-cap">18</span></div>
           <input type="range" min="4" max="40" step="1" value="18" id="s-cap" />
-          <div class="hint">Hard ceiling on bodies per section.</div>
+          <div class="hint">Hard ceiling on bodies per section — the <strong>maximum</strong>. Your actual average is set below.</div>
+        </div>
+
+        <div class="lever">
+          <div class="lever-top"><label for="s-avgcls">Average students per class (actual)</label><span class="lever-val" id="v-avgcls">12</span></div>
+          <input type="range" min="1" max="40" step="0.5" value="12" id="s-avgcls" />
+          <div class="hint">Your real average fill — well below the cap if you run 1-on-1s, split levels by schedule, or have partial classes. <strong>Class count = students ÷ this.</strong> e.g. 329 ÷ 4 ≈ 83 classes.</div>
         </div>
 
         <div class="lever">
@@ -369,7 +375,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=9" defer></script>
+<script src="app.js?v=10" defer></script>
 </main>
 </body>
 </html>
