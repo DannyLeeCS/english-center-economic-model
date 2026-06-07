@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=8" />
+<link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
 <main class="page">
@@ -23,6 +23,12 @@
   <!-- ============ CONTROLS ============ -->
   <section class="card controls">
     <h2 class="sr-only">Inputs</h2>
+
+    <div class="toolbar">
+      <button type="button" id="btn-save" class="btn">Save settings</button>
+      <button type="button" id="btn-reset" class="btn btn-ghost">Reset to defaults</button>
+      <span class="toolbar-note">Your numbers also auto-save as you change them.</span>
+    </div>
 
     <!-- ---- Unit economics / cost buckets ---- -->
     <div class="lever-group">
@@ -363,7 +369,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=8" defer></script>
+<script src="app.js?v=9" defer></script>
 </main>
 </body>
 </html>

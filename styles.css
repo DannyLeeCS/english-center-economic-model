@@ -111,6 +111,21 @@ body{
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
 
+/* ---------------- save / reset toolbar ---------------- */
+.toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+.btn{
+  font:inherit; font-size:13px; font-weight:600; cursor:pointer;
+  padding:8px 16px; border-radius:999px; border:1px solid transparent; color:#06121f;
+  background:linear-gradient(180deg,#8fe0ff,#38bdf8); box-shadow:0 0 14px var(--glow-be);
+  transition:transform .1s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
+}
+.btn:hover{ transform:translateY(-1px); }
+.btn:active{ transform:translateY(0); }
+.btn-ghost{ color:var(--color-text-secondary); background:var(--glass-soft); border-color:var(--border); box-shadow:none; }
+.btn-ghost:hover{ color:var(--text); }
+.btn-flash{ background:linear-gradient(180deg,#7af0c8,#34d399) !important; color:#06121f !important; box-shadow:0 0 14px var(--glow-fill) !important; }
+.toolbar-note{ font-size:11.5px; color:var(--text-faint); }
+
 /* ---------------- controls ---------------- */
 .lever-group{ margin-bottom:2rem; }
 .lever-group:last-of-type{ margin-bottom:0; }

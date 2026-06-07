@@ -252,6 +252,8 @@
   }
 
   // ---------- persistence ----------
+  // STABLE key — do NOT bump on model updates. loadState() merges saved values and
+  // leaves any new/changed sliders at their HTML default, so updates never wipe a user's saved numbers.
   const STORAGE_KEY = 'ecm.state.v6';
   function saveState(){
     try{
@@ -302,6 +304,24 @@
   $('seg-mode').addEventListener('click', e => { const btn=e.target.closest('button'); if(!btn) return; applyMode(btn.dataset.mode); compute(); });
   $('seg-intake').addEventListener('click', e => { const btn=e.target.closest('button'); if(!btn) return; if($('intake-block').classList.contains('disabled')) return; applyIntake(btn.dataset.intake); compute(); });
   $('deferred').addEventListener('change', e => { $('deferred-panel').hidden = !e.target.checked; saveState(); });
+
+  // ---------- save / reset buttons ----------
+  function flash(btn, msg){
+    if (btn.dataset.label===undefined) btn.dataset.label = btn.textContent;
+    btn.textContent = msg; btn.classList.add('btn-flash');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(()=>{ btn.textContent = btn.dataset.label; btn.classList.remove('btn-flash'); }, 1300);
+  }
+  $('btn-save').addEventListener('click', ()=>{ saveState(); flash($('btn-save'),'Saved ✓'); });
+  $('btn-reset').addEventListener('click', ()=>{
+    sliderIds.forEach(id => { const el=$('s-'+id); el.value = el.defaultValue; });
+    $('elastic').checked  = $('elastic').defaultChecked;
+    $('scarce').checked   = $('scarce').defaultChecked;
+    $('deferred').checked = $('deferred').defaultChecked; $('deferred-panel').hidden = !$('deferred').checked;
+    applyMode('cohort'); applyIntake(1); applyView('steady');
+    compute();                       // recomputes and auto-saves the defaults
+    flash($('btn-reset'),'Reset ✓');
+  });
 
   loadState();
   compute();
