@@ -135,6 +135,7 @@ chosen **view** picks which stock drives the headline; and everything below spli
 | Input | Symbol | Meaning |
 |---|---|---|
 | Overhead & rent / month | `fix` | All non-teacher fixed cost incl. classroom rent |
+| Current student debt (deferred balance) | `debtBalance` | Real prepaid-but-unearned tuition from your books (informational) |
 | Price elasticity | `useElastic` | Tuition's only indirect path to fill |
 | Force rooms scarce | `forceScarce` | Manually load opportunity cost |
 | Enrollment mode | `mode` | `cohort` (pool then launch) vs `rolling` |
@@ -303,13 +304,38 @@ guaranteeCost      = retakeVarCost + retakeCapacityCost + retakeSeatOpp
 > **Second-order tension the model surfaces:** filling classes / growing demand toward capacity makes
 > the guarantee *more* expensive, because empty seats disappear and retakes start displacing payers.
 
-### 4.11 Deferred revenue (optional view)
+### 4.11 Deferred revenue / student debt (informational — never touches profit)
+Tuition is collected **upfront** (a liability) and **realized** as sessions are delivered, evenly over
+`cm` months. The not-yet-delivered balance is the student-debt book. This is **separate from the free
+retakes** (§4.10): retakes are *unpaid re-teaching counted as cost*; deferred revenue is
+*paid-but-undelivered teaching counted as a liability*. The two never interact.
+
+A real balance is an **input** (`debtBalance`, from your books). Three monthly money lines are shown
+**separately** (never collapsed):
 ```
-courseStarts = payingStock / cm
-cashIn       = courseStarts × fee                       // collected upfront at each course start
-recognized   = revenue                                  // earned this month (≈ cashIn at steady state)
-unearned     = payingStock × feePerMonth × (cm − 1) / 2 // cash held but owed as future teaching
+payingCourseStarts = inflowDemand + max(0, payingStock/cm − g × payingStock)   // new + continuing
+cashCollected   = payingCourseStarts × fee        // tuition cash in (a liability when received)
+revenueRealized = revenue = payingStock × feePerMonth   // tuition earned by delivering sessions
+debtChange      = cashCollected − revenueRealized // + growing / − draining; = 0 at steady state
 ```
+Projected over the 24-month chart (second series), starting from the real balance:
+```
+debtSeries[0] = debtBalance
+debtSeries[t] = max(0, debtSeries[t−1] + (inflowDemand − g × payingStock_{t−1}) × fee)
+```
+**KPIs & diagnostics:**
+```
+monthsOfDebtCoverage = debtBalance / revenueRealized   // also the "runway if inflow stops"
+derivedUnearned      = payingStock × feePerMonth × (cm − 1) / 2   // model's internal estimate
+gap                  = debtBalance − derivedUnearned
+```
+A large positive `gap` (real ≫ derived) means you've collected far more than your *active* teaching
+pace works off — prepaid money from **enrolled-but-not-currently-taught** students (waiting / on hold).
+It's a diagnostic, not an error. An optional **existing-book runoff** stub shows the book converting to
+realized revenue over ~`cm` months if no new courses are sold.
+
+> **Strictly informational.** None of this changes `profit` or either break-even; the invariant in §5
+> still holds, and all retake/guarantee numbers are unchanged.
 
 ### 4.12 Stock projection (the chart)
 24-month forward simulation from today's headcount:

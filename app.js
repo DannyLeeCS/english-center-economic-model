@@ -1,7 +1,7 @@
 (function(){
   const CY='#38bdf8', EM='#34d399', VI='#a78bfa', AM='#fbbf24', TRACK='rgba(255,255,255,.10)';
   const ACCENT = {
-    fee:CY, vc:CY, ro:CY, cm:CY, fix:CY,
+    fee:CY, vc:CY, ro:CY, cm:CY, fix:CY, debtbalance:CY,
     courses:AM, uppct:AM, upcourses:AM, failrate:AM, retakecourses:AM,
     ftsal:CY, ptpct:CY, pthr:CY, pthrs:CY, ftper:CY, ftcov:CY,
     cap:VI, avgcls:VI, rooms:VI, sess:VI, evesl:VI, evedays:VI, wkndsl:VI, wknddays:VI, mainpct:VI, wkndpct:VI, offpeakfill:VI, opp:VI,
@@ -27,7 +27,8 @@
   }
   function setText(id, v, color){ const e=$(id); e.textContent=v; if(color!==undefined) e.style.color=color; }
 
-  function buildChart(series, steady, yMax){
+  function buildChart(series, steady, yMax, lbl){
+    lbl = lbl || 'steady ≈ ';
     const W=640, Hs=250, padL=46, padR=16, padT=14, padB=26;
     const xMax = series.length-1;
     const X = t => padL + (t/xMax)*(W-padL-padR);
@@ -39,7 +40,7 @@
     const xt=[0,6,12,18,24].filter(t=>t<=xMax);
     const xlab = xt.map(t=>'<text class="xlab" x="'+X(t).toFixed(1)+'" y="'+(Hs-8)+'">'+t+'</text>').join('');
     const sy = Y(steady).toFixed(1);
-    const steadyLine = '<line class="steady" x1="'+padL+'" y1="'+sy+'" x2="'+(W-padR)+'" y2="'+sy+'"/><text class="slab" x="'+(W-padR)+'" y="'+(+sy-6).toFixed(1)+'">steady ≈ '+Math.round(steady)+'</text>';
+    const steadyLine = '<line class="steady" x1="'+padL+'" y1="'+sy+'" x2="'+(W-padR)+'" y2="'+sy+'"/><text class="slab" x="'+(W-padR)+'" y="'+(+sy-6).toFixed(1)+'">'+lbl+Math.round(steady)+'</text>';
     return '<svg viewBox="0 0 '+W+' '+Hs+'" class="chart-svg" preserveAspectRatio="xMidYMid meet">'
       + '<defs><linearGradient id="areaG" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="'+EM+'" stop-opacity="0.32"/><stop offset="1" stop-color="'+EM+'" stop-opacity="0"/></linearGradient></defs>'
       + grid + steadyLine
@@ -63,7 +64,7 @@
     const sess=num('sess'), evesl=num('evesl'), evedays=num('evedays'), wkndsl=num('wkndsl'), wknddays=num('wknddays');
     const mainpct=num('mainpct')/100, wkndpct=num('wkndpct')/100, opf=num('offpeakfill')/100;
     const mkt=num('mkt'), cpl=num('cpl'), conv=num('conv'), lvl=num('lvl'), wait=num('wait');
-    const initAct=num('initact'), fix=num('fix');
+    const initAct=num('initact'), fix=num('fix'), debtBalance=num('debtbalance');
     const useElastic=$('elastic').checked, forceScarce=$('scarce').checked;
 
     // value labels
@@ -77,7 +78,7 @@
     setText('v-mainpct',Math.round(mainpct*100)+'%'); setText('v-wkndpct',Math.round(wkndpct*100)+'%'); setText('v-offpeakfill',Math.round(opf*100)+'%');
     setText('v-mkt',fmtM(mkt)); setText('v-cpl',fmtK(cpl)); setText('v-conv',conv+'%');
     setText('v-lvl',lvl); setText('v-wait',wait+(wait===1?' wk':' wks')); setText('v-initact',Math.round(initAct));
-    setText('v-fix',fmtM(fix));
+    setText('v-fix',fmtM(fix)); setText('v-debtbalance',fmtM(debtBalance));
 
     // -------- per-unit economics (unscaled) --------
     const feePerMonth = fee/cm;
@@ -208,11 +209,18 @@
 
     const marginPerClass = classSize*contribPerStudent - marginalClassCost;
 
-    // -------- deferred revenue (paying bodies only) --------
-    const courseStartsPerMonth = cm>0 ? payingStock/cm : 0;
-    const cashIn = courseStartsPerMonth*fee;
-    const recognized = revenue;
-    const unearned = payingStock*feePerMonth*Math.max(0,(cm-1))/2;
+    // -------- DEFERRED REVENUE / STUDENT DEBT (informational only — never touches profit) --------
+    // Cash is collected upfront at each PAYING course-start; revenue is realized as sessions deliver.
+    // (Entirely separate from the free-retake mechanic: retakes pay nothing and don't enter this.)
+    const payingCourseStarts = inflowDemand + Math.max(0, payingStock/cm - g*payingStock); // new + continuing
+    const cashCollected   = payingCourseStarts*fee;        // tuition cash in this month (a liability when received)
+    const revenueRealized = revenue;                       // tuition earned this month (= the P&L revenue)
+    const debtChange      = cashCollected - revenueRealized; // + growing / − draining the deferred balance
+    const derivedUnearned = payingStock*feePerMonth*Math.max(0,(cm-1))/2; // model's internal estimate
+    const debtGap         = debtBalance - derivedUnearned;
+    const debtCoverage    = revenueRealized>0 ? debtBalance/revenueRealized : 0; // months of float / runway
+    const runoffMonths    = cm;                            // existing book runs off over ~course length (uniform progress)
+    const runoffRate      = cm>0 ? debtBalance/cm : 0;     // avg realized from the existing book / mo
 
     // === OUTCOME GUARANTEE COST ===
     // Retakes re-join existing classes. While classes have spare seats (the usual demand-constrained
@@ -240,6 +248,16 @@
     for (let t=1; t<=H; t++) series.push(Math.min(maxTotalStock, series[t-1]*(1-g) + totalInflow));
     const yMax = Math.max(...series, steadyStock, 10)*1.12;
     $('chart').innerHTML = buildChart(series, steadyStock, yMax);
+
+    // deferred-revenue / student-debt projection — starts at the real balance, evolves by (collected − realized)
+    const debtSeries = [debtBalance];
+    for (let t=1; t<=H; t++){
+      const prevPaying = series[t-1]/(1+retakeMult);
+      const dCh = (inflowDemand - g*prevPaying)*fee;          // cash collected − revenue realized that month
+      debtSeries.push(Math.max(0, debtSeries[t-1] + dCh));
+    }
+    const debtYMax = Math.max(...debtSeries, debtBalance, 10)*1.12;
+    if ($('debt-chart')) $('debt-chart').innerHTML = buildChart(debtSeries, debtSeries[H], debtYMax, 'mo 24 ≈ ');
     const dir = steadyStock - initAct;
     setText('chart-note', Math.abs(dir) < Math.max(5, initAct*0.02)
         ? 'holding near '+Math.round(steadyStock)
@@ -389,9 +407,21 @@
     }
     setText('w-note', wnote);
 
-    setText('d-cash', fmtM(cashIn));
-    setText('d-real', fmtM(recognized));
-    setText('d-unearned', fmtM(unearned));
+    setText('d-cash', fmtM(cashCollected));
+    setText('d-real', fmtM(revenueRealized));
+    setText('d-change', Math.abs(debtChange)<0.5 ? '≈ 0 (stable)' : (debtChange>=0?'+':'−')+fmtM(Math.abs(debtChange)), Math.abs(debtChange)<0.5 ? 'var(--text)' : (debtChange>=0 ? 'var(--color-text-warning)' : 'var(--color-text-success)'));
+    setText('d-coverage', debtCoverage.toFixed(1)+' mo', debtCoverage>3 ? 'var(--color-text-warning)' : 'var(--text)');
+    setText('d-runway', debtCoverage.toFixed(1)+' mo');
+    setText('d-derived', fmtM(derivedUnearned));
+    setText('d-real-debt', fmtM(debtBalance));
+    setText('d-gap', (debtGap>=0?'+':'−')+fmtM(Math.abs(debtGap)));
+    setText('d-note', Math.abs(debtGap) < derivedUnearned*0.5
+      ? 'Real debt ≈ the model’s derived unearned — your prepaid float matches your active teaching pace.'
+      : (debtGap>0
+        ? 'Real debt is far above the derived estimate (gap '+fmtM(debtGap)+'): you’ve collected much more than your current teaching pace works off — prepaid money from enrolled-but-not-currently-taught students (waiting / on hold). A diagnostic, not an error.'
+        : 'Real debt is below the derived estimate — you may be recognizing revenue faster than collections, or the balance is understated.'));
+    setText('d-runoff-mo', runoffMonths.toFixed(1)+' mo');
+    setText('d-runoff-rate', fmtM(runoffRate));
 
     saveState();
   }

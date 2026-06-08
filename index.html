@@ -320,6 +320,19 @@
       </div>
     </div>
 
+    <!-- ---- Deferred revenue (student debt) ---- -->
+    <div class="lever-group">
+      <div class="lever-heading lever-heading--be">Deferred revenue <span class="drives">prepaid tuition (liability)</span></div>
+      <p class="group-note">Tuition is collected upfront but earned as sessions are delivered. The not-yet-delivered portion is a <strong>liability</strong> (student debt). Informational only — it does not change profit or break-even.</p>
+      <div class="levers be">
+        <div class="lever">
+          <div class="lever-top"><label for="s-debtbalance">Current student debt (deferred balance)</label><span class="lever-val" id="v-debtbalance">6700M</span></div>
+          <input type="range" min="0" max="30000" step="50" value="6700" id="s-debtbalance" />
+          <div class="hint">From your books — total prepaid tuition not yet earned through delivery. Distinct from free-retake cost; that's unpaid re-teaching, this is paid-but-undelivered.</div>
+        </div>
+      </div>
+    </div>
+
   </section>
 
   <!-- ============ RESULTS ============ -->
@@ -458,18 +471,40 @@
     </div>
 
     <label class="toggle toggle--wide">
-      <input type="checkbox" id="deferred" />
-      <span>Show cash vs. realized revenue (deferred-revenue view)</span>
+      <input type="checkbox" id="deferred" checked />
+      <span>Show deferred-revenue / student-debt view</span>
     </label>
 
-    <div class="detail" id="deferred-panel" hidden>
-      <div class="detail-title">Cash vs. realized <span class="muted">— tuition collected upfront, earned per month</span></div>
+    <div class="detail" id="deferred-panel">
+      <div class="detail-title">Deferred revenue / student debt <span class="muted">— informational, does not change profit</span></div>
       <table>
-        <tr><td>Cash collected / mo (course-starts × fee)</td><td class="num" id="d-cash">—</td></tr>
-        <tr><td>Recognized revenue / mo (earned)</td><td class="num" id="d-real">—</td></tr>
-        <tr><td>Unearned tuition held (est. balance)</td><td class="num" id="d-unearned">—</td></tr>
+        <tr><td>Cash collected / mo <span class="muted">(course-starts × fee, a liability when received)</span></td><td class="num" id="d-cash">—</td></tr>
+        <tr><td>Realized revenue / mo <span class="muted">(earned by delivering sessions)</span></td><td class="num" id="d-real">—</td></tr>
+        <tr><td>Debt change / mo <span class="muted">(collected − realized)</span></td><td class="num" id="d-change">—</td></tr>
       </table>
-      <p class="hint">At a steady stock, monthly cash in ≈ recognized revenue (money conserved). The gap you carry is the <strong>unearned balance</strong> — cash held but owed as future teaching, not freely spendable.</p>
+
+      <div class="kpis kpis--debt">
+        <div class="kpi"><div class="kpi-label" title="debtBalance ÷ realized revenue. Healthy ≈ 1–2 months; high means a large prepaid float.">Months of debt coverage</div><div class="kpi-num" id="d-coverage">—</div></div>
+        <div class="kpi"><div class="kpi-label" title="If new enrollment stopped, how long the existing debt book sustains realized revenue before exhausting.">Runway if inflow stops</div><div class="kpi-num" id="d-runway">—</div></div>
+      </div>
+
+      <div class="detail-title" style="margin-top:14px;">Deferred revenue / student debt — projected 24 mo</div>
+      <div id="debt-chart"></div>
+
+      <div class="detail-title" style="margin-top:14px;">Diagnostic — derived vs. real</div>
+      <table>
+        <tr><td>Model-derived unearned <span class="muted">(active teaching pace)</span></td><td class="num" id="d-derived">—</td></tr>
+        <tr><td>Your real debt balance <span class="muted">(from books)</span></td><td class="num" id="d-real-debt">—</td></tr>
+        <tr><td>Gap <span class="muted">(real − derived)</span></td><td class="num" id="d-gap">—</td></tr>
+      </table>
+      <p class="hint" id="d-note"></p>
+
+      <div class="detail-title" style="margin-top:14px;">Existing-book runoff <span class="muted">(no new sales)</span></div>
+      <table>
+        <tr><td>Runs off over (uniform progress)</td><td class="num" id="d-runoff-mo">—</td></tr>
+        <tr><td>Avg realized from existing book / mo</td><td class="num" id="d-runoff-rate">—</td></tr>
+      </table>
+      <p class="hint">If you sold no new courses, the existing book converts to realized revenue as current courses finish — exhausting in roughly the course length. (The full real balance can last longer if on-hold students resume slowly.)</p>
     </div>
 
   </section>
@@ -477,7 +512,7 @@
 </div>
 
 <p class="footer-note">Amounts in VND millions unless labelled otherwise. A planning model — directional, not accounting.</p>
-<script src="app.js?v=14" defer></script>
+<script src="app.js?v=15" defer></script>
 </main>
 </body>
 </html>
